@@ -18,13 +18,13 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _checkIfLoggedIn(); // چک کردن اینکه آیا کاربر قبلاً لاگین کرده یا نه
+    _checkIfLoggedIn();
   }
 
-  // اگر توکن ذخیره شده باشد، مستقیم وارد صفحه اصلی شو
+  // چک کردن اینکه آیا کاربر قبلاً لاگین کرده یا نه
   void _checkIfLoggedIn() async {
-    await ApiService.loadToken();
-    if (ApiService._token != null) {
+    await ApiService.loadSessionCookie();
+    if (ApiService.isLoggedIn) {
       Navigator.pushReplacement(
         context, 
         MaterialPageRoute(builder: (_) => const HomeScreen())
@@ -40,13 +40,11 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result['success']) {
-      // هدایت به صفحه اصلی
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
     } else {
-      // نمایش ارور
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result['message'] ?? 'خطا در ورود', style: const TextStyle(fontFamily: 'Vazir')), 
+          content: Text(result['message'] ?? 'خطا در ورود', style: const TextStyle(fontFamily: 'Peyda')), 
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -70,15 +68,14 @@ class _LoginScreenState extends State<LoginScreen> {
           child: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(20.0),
-              // کادر شیشه ای با افکت Blur واقعی
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(25),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15), // افکت تار کردن پس زمینه
+                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                   child: Container(
                     padding: const EdgeInsets.all(30),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15), // شفافیت کادر
+                      color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(25),
                       border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
                     ),
@@ -87,9 +84,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         const Icon(Icons.car_repair, size: 70, color: Colors.white),
                         const SizedBox(height: 15),
-                        const Text('اصالت خودرو', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, fontFamily: 'Vazir')),
+                        const Text('اصالت خودرو', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, fontFamily: 'Peyda')),
                         const SizedBox(height: 5),
-                        const Text('برای ادامه وارد حساب خود شوید', style: TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Vazir')),
+                        const Text('برای ادامه وارد حساب خود شوید', style: TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Peyda')),
                         const SizedBox(height: 30),
                         _buildTextField('شماره موبایل', Icons.phone, _usernameController),
                         _buildTextField('رمز عبور', Icons.lock, _passwordController, obscure: true),
@@ -105,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   elevation: 5,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                                 ),
-                                child: const Text('ورود', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Vazir')),
+                                child: const Text('ورود', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Peyda')),
                               ),
                       ],
                     ),
@@ -129,12 +126,12 @@ class _LoginScreenState extends State<LoginScreen> {
           child: TextField(
             controller: controller,
             obscureText: obscure,
-            keyboardType: TextInputType.phone, // کیبورد اعدادی برای موبایل
-            style: const TextStyle(color: Colors.white, fontSize: 16),
+            keyboardType: TextInputType.phone,
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'Peyda'),
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: Colors.white70),
               hintText: hint,
-              hintStyle: const TextStyle(color: Colors.white60, fontFamily: 'Vazir'),
+              hintStyle: const TextStyle(color: Colors.white60, fontFamily: 'Peyda'),
               filled: true,
               fillColor: Colors.white.withOpacity(0.1),
               enabledBorder: OutlineInputBorder(
