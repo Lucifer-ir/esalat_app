@@ -39,14 +39,18 @@ class _HomeScreenState extends State<HomeScreen> {
   IconData _getIcon(String iconName) {
     switch (iconName) {
       case 'car': return Icons.directions_car;
-      case 'caravan': return Icons.car_repair;
+      case 'caravan': return Icons.airport_shuttle; // جایگزین کاروان
+      case 'car-side': return Icons.time_to_leave; // جایگزین ماشین از بغل
       case 'truck': return Icons.local_shipping;
       case 'motorcycle': return Icons.motorcycle;
       case 'globe': return Icons.public;
-      case 'truck-pickup': return Icons.pickup;
+      case 'truck-pickup': return Icons.local_shipping; // حل مشکل ارور: آیکون وانت
+      case 'truck-moving': return Icons.local_shipping; // جایگزین کامیون در حال حرکت
+      case 'tractor': return Icons.agriculture; // جایگزین تراکتور
       case 'bus': return Icons.directions_bus;
       case 'camera': return Icons.camera_alt;
       case 'images': return Icons.collections;
+      case 'ellipsis-h': return Icons.more_horiz; // جایگزین سه نقطه سایر گروه ها
       default: return Icons.category;
     }
   }
