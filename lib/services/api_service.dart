@@ -3,24 +3,28 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // آدرس دامنه سایت خود را اینجا بگذارید
+  // ==========================================
+  // آدرس سایت خودت رو اینجا بگذار (مهم!)
+  // ==========================================
   static const String baseUrl = 'https://esalatcar.ir/api.php';
   
-  // ذخیره کوکی سشن برای حفظ لاگین
   static String? _sessionCookie;
 
-  // تابع ذخیره کوکی
+  // ذخیره کوکی سشن برای حفظ لاگین
   static Future<void> saveSessionCookie(String cookie) async {
     _sessionCookie = cookie;
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setString('session_cookie', cookie);
   }
 
-  // تابع خواندن کوکی هنگام باز شدن اپ
+  // خواندن کوکی هنگام باز شدن اپ
   static Future<void> loadSessionCookie() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     _sessionCookie = prefs.getString('session_cookie');
   }
+
+  // چک کردن اینکه آیا کوکی سشن وجود دارد یا نه (برای صفحه لاگین)
+  static bool get isLoggedIn => _sessionCookie != null;
 
   // تابع لاگین
   static Future<Map<String, dynamic>> login(String username, String password) async {
@@ -36,7 +40,7 @@ class ApiService {
       // ذخیره کوکی سشن که سرور می‌فرستد
       String? rawCookie = response.headers['set-cookie'];
       if (rawCookie != null) {
-        await saveSessionCookie(rawCookie.split(';').first); // فقط بخش PHPSESSID
+        await saveSessionCookie(rawCookie.split(';').first);
       }
 
       return jsonDecode(response.body);
@@ -45,7 +49,7 @@ class ApiService {
     }
   }
 
-  // تابع عمومی برای درخواست‌های GET (مثل گرفتن گروه‌ها)
+  // تابع عمومی برای درخواست‌های GET
   static Future<Map<String, dynamic>> getRequest(String action, {Map<String, String>? extraParams}) async {
     await loadSessionCookie();
     
@@ -61,7 +65,7 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
-  // تابع عمومی برای درخواست‌های POST (مثل ثبت خودرو)
+  // تابع عمومی برای درخواست‌های POST
   static Future<Map<String, dynamic>> postRequest(String action, Map<String, String> fields) async {
     await loadSessionCookie();
     
