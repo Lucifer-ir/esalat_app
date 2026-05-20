@@ -30,6 +30,9 @@ flutter:
   fonts:
     - family: Vazir
       fonts:
-        - asset: assets/fonts/Vazir-Regular.ttf
-        - asset: assets/fonts/Vazir-Bold.ttf
+        - asset: assets/fonts/Peyda-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Peyda-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Peyda-Bold.ttf
           weight: 700
