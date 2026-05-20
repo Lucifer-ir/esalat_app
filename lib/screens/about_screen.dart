@@ -122,7 +122,7 @@ class AboutScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text( // کلمه const از اینجا حذف شد
                         'محمد بیرامی جم',
                         style: TextStyle(
                           fontSize: 20, 

@@ -31,9 +31,16 @@
             android:value="2" />
     </application>
 
-    <!-- اضافه کردن دسترسی به اینترنت (بسیار مهم) -->
+    <!-- دسترسی‌های شبکه (اینترنت) -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- دسترسی‌های دوربین و گالری (برای ثبت تصویر) -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/> <!-- برای اندروید 13 به بالا -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/> <!-- برای اندروید 12 به پایین -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/> <!-- برای ذخیره عکس در اندرویدهای قدیمی -->
 
     <queries>
         <intent>
