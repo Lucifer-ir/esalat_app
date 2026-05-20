@@ -1,16 +1,18 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   // ==========================================
-  // آدرس دقیق فایل API سایت شما
+  // آدرس فایل‌های سرور
   // ==========================================
   static const String baseUrl = 'https://esalatcar.ir/api.php';
+  static const String loginUrl = 'https://esalatcar.ir/app_login.php'; // فایل جدید لاگین
   
   static String? _sessionCookie;
 
-  // ذخیره کوکی سشن برای حفظ لاگین
+  // ذخیره کوکی سشن
   static Future<void> saveSessionCookie(String cookie) async {
     _sessionCookie = cookie;
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -19,19 +21,18 @@ class ApiService {
 
   // خواندن کوکی هنگام باز شدن اپ
   static Future<void> loadSessionCookie() async {
-    if (_sessionCookie != null) return; // اگر قبلاً در رم لود شده، دوباره از حافظه نخوان
+    if (_sessionCookie != null) return;
     SharedPreferences prefs = await SharedPreferences.getInstance();
     _sessionCookie = prefs.getString('session_cookie');
   }
 
-  // چک کردن اینکه آیا کوکی سشن وجود دارد یا نه
+  // چک کردن وضعیت لاگین
   static bool get isLoggedIn => _sessionCookie != null;
 
   // تابع لاگین
   static Future<Map<String, dynamic>> login(String username, String password) async {
     try {
-      var request = http.MultipartRequest('POST', Uri.parse(baseUrl));
-      request.fields['action'] = 'login';
+      var request = http.MultipartRequest('POST', Uri.parse(loginUrl));
       request.fields['username'] = username;
       request.fields['password'] = password;
 
@@ -41,16 +42,20 @@ class ApiService {
       // ذخیره کوکی سشن که سرور می‌فرستد
       String? rawCookie = response.headers['set-cookie'];
       if (rawCookie != null) {
-        await saveSessionCookie(rawCookie.split(';').first);
+        // استخراج فقط بخش PHPSESSID
+        String sessionId = rawCookie.split(';').first;
+        await saveSessionCookie(sessionId);
       }
 
       return jsonDecode(response.body);
+    } on SocketException {
+      return {'success': false, 'message': 'اتصال ناموفق. اینترنت خود را بررسی کنید.'};
     } catch (e) {
-      return {'success': false, 'message': 'خطا در اتصال به سرور: $e'};
+      return {'success': false, 'message': 'خطای ناشناخته در سرور: $e'};
     }
   }
 
-  // تابع عمومی برای درخواست‌های GET (مثل getGroups)
+  // تابع عمومی برای درخواست‌های GET (به api.php)
   static Future<Map<String, dynamic>> getRequest(String action, {Map<String, String>? extraParams}) async {
     await loadSessionCookie();
     
@@ -65,12 +70,14 @@ class ApiService {
       });
 
       return jsonDecode(response.body);
+    } on SocketException {
+      return {'success': false, 'message': 'اتصال ناموفق. اینترنت خود را بررسی کنید.'};
     } catch (e) {
       return {'success': false, 'message': 'خطا در دریافت اطلاعات از سرور'};
     }
   }
 
-  // تابع عمومی برای درخواست‌های POST
+  // تابع عمومی برای درخواست‌های POST (به api.php)
   static Future<Map<String, dynamic>> postRequest(String action, Map<String, String> fields) async {
     await loadSessionCookie();
     
@@ -87,6 +94,8 @@ class ApiService {
       var response = await http.Response.fromStream(streamedResponse);
 
       return jsonDecode(response.body);
+    } on SocketException {
+      return {'success': false, 'message': 'اتصال ناموفق. اینترنت خود را بررسی کنید.'};
     } catch (e) {
       return {'success': false, 'message': 'خطا در ارسال اطلاعات به سرور'};
     }
