@@ -17,6 +17,8 @@ dependencies:
   http: ^1.2.1                  # برای ارتباط با API سرور
   shared_preferences: ^2.2.3    # برای ذخیره کوکی/توکن لاگین
   provider: ^6.1.2              # برای مدیریت تم تاریک/روشن
+  sqflite: ^2.3.0               # برای دیتابیس آفلاین (ثبت خودرو بدون اینترنت)
+  path: ^1.9.0                  # برای پیدا کردن مسیر ذخیره دیتابیس
 
 dev_dependencies:
   flutter_test:
@@ -26,9 +28,13 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # فعال کردن پوشه عکس‌ها (برای آینده اگر خواستی عکس به برنامه اضافه کنی)
+  # assets:
+  #   - assets/images/
+
   # فعال کردن پوشه فونت‌ها
   fonts:
-    - family: Vazir
+    - family: Peyda  # نامی که در کدهای فلاتر (style: TextStyle(fontFamily: 'Peyda')) استفاده می‌کنی
       fonts:
         - asset: assets/fonts/Peyda-Regular.ttf
           weight: 400

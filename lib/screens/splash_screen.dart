@@ -25,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen> {
     setState(() { _hasError = false; });
     try {
       // تست اتصال به سرور شما
-      final response = await http.get(Uri.parse('https://yourdomain.com/api.php')).timeout(const Duration(seconds: 5));
+      final response = await http.get(Uri.parse('https://esalatcar.ir/api.php')).timeout(const Duration(seconds: 5));
       
       if (response.statusCode == 200) {
         SharedPreferences prefs = await SharedPreferences.getInstance();
