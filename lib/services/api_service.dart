@@ -7,8 +7,8 @@ class ApiService {
   // ==========================================
   // آدرس فایل‌های سرور
   // ==========================================
-  static const String baseUrl = 'https://esalatcar.ir/api.php';
-  static const String loginUrl = 'https://esalatcar.ir/app_login.php'; // فایل جدید لاگین
+  static const String baseUrl = 'http://esalatcar.ir/api.php';
+  static const String loginUrl = 'http://esalatcar.ir/app_login.php'; // فایل جدید لاگین
   
   static String? _sessionCookie;
 
