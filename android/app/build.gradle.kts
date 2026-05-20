@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.esalat_car"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 34 // تنظیم دستی روی SDK 34 (اندروید 14)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -20,12 +20,10 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.esalat_car"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // تنظیم دستی نسخه‌ها برای جلوگیری از ارور Parsing Package در گوشی
+        minSdk = 24 // حداقل نسخه اندروید 7.0 (مناسب برای پکیج image_picker)
+        targetSdk = 34 // هدف اندروید 14
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
