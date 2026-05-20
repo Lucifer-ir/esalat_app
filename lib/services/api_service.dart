@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   // ==========================================
-  // آدرس سایت خودت رو اینجا بگذار (مهم!)
+  // آدرس دقیق فایل API سایت شما
   // ==========================================
   static const String baseUrl = 'https://esalatcar.ir/api.php';
   
@@ -19,11 +19,12 @@ class ApiService {
 
   // خواندن کوکی هنگام باز شدن اپ
   static Future<void> loadSessionCookie() async {
+    if (_sessionCookie != null) return; // اگر قبلاً در رم لود شده، دوباره از حافظه نخوان
     SharedPreferences prefs = await SharedPreferences.getInstance();
     _sessionCookie = prefs.getString('session_cookie');
   }
 
-  // چک کردن اینکه آیا کوکی سشن وجود دارد یا نه (برای صفحه لاگین)
+  // چک کردن اینکه آیا کوکی سشن وجود دارد یا نه
   static bool get isLoggedIn => _sessionCookie != null;
 
   // تابع لاگین
@@ -45,11 +46,11 @@ class ApiService {
 
       return jsonDecode(response.body);
     } catch (e) {
-      return {'success': false, 'message': 'خطا در اتصال به سرور'};
+      return {'success': false, 'message': 'خطا در اتصال به سرور: $e'};
     }
   }
 
-  // تابع عمومی برای درخواست‌های GET
+  // تابع عمومی برای درخواست‌های GET (مثل getGroups)
   static Future<Map<String, dynamic>> getRequest(String action, {Map<String, String>? extraParams}) async {
     await loadSessionCookie();
     
@@ -58,11 +59,15 @@ class ApiService {
     
     Uri url = Uri.parse(baseUrl).replace(queryParameters: params);
     
-    var response = await http.get(url, headers: {
-      if (_sessionCookie != null) 'Cookie': _sessionCookie!,
-    });
+    try {
+      var response = await http.get(url, headers: {
+        if (_sessionCookie != null) 'Cookie': _sessionCookie!,
+      });
 
-    return jsonDecode(response.body);
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'خطا در دریافت اطلاعات از سرور'};
+    }
   }
 
   // تابع عمومی برای درخواست‌های POST
@@ -77,9 +82,13 @@ class ApiService {
       request.headers['Cookie'] = _sessionCookie!;
     }
 
-    var streamedResponse = await request.send();
-    var response = await http.Response.fromStream(streamedResponse);
+    try {
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
 
-    return jsonDecode(response.body);
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'خطا در ارسال اطلاعات به سرور'};
+    }
   }
 }

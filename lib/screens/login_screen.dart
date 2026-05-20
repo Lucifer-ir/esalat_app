@@ -15,23 +15,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _checkIfLoggedIn();
-  }
-
-  // چک کردن اینکه آیا کاربر قبلاً لاگین کرده یا نه
-  void _checkIfLoggedIn() async {
-    await ApiService.loadSessionCookie();
-    if (ApiService.isLoggedIn) {
-      Navigator.pushReplacement(
-        context, 
-        MaterialPageRoute(builder: (_) => const HomeScreen())
-      );
-    }
-  }
-
   void _login() async {
     setState(() => _isLoading = true);
     
@@ -40,8 +23,10 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result['success']) {
+      // اگر ادمین بود یا اشتراک داشت، موفقیت آمیز است
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
     } else {
+      // نمایش پیام ارور که از سرور (api.php) آمده است (مثلا: اشتراک شما به پایان رسیده است)
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message'] ?? 'خطا در ورود', style: const TextStyle(fontFamily: 'Peyda')), 
