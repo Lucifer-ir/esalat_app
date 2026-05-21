@@ -24,9 +24,27 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
   }
 
   void _setupWebView() async {
-    // گرفتن کوکی ذخیره شده در فلاتر
+    // ==========================================
+    // تزریق کوکی به مرورگر درون اپلیکیشن (مهم‌ترین بخش)
+    // ==========================================
     await ApiService.loadSessionCookie();
-    final String? cookie = ApiService.getSessionCookie();
+    String? rawCookie = ApiService.getSessionCookie();
+    
+    if (rawCookie != null) {
+      // استخراج مقدار PHPSESSID (حذف کلمه PHPSESSID= از ابتدای رشته)
+      String cookieValue = rawCookie.replaceAll('PHPSESSID=', '');
+      
+      // ذخیره کوکی در خود مرورگر وب‌ویو
+      final cookieManager = WebViewCookieManager();
+      await cookieManager.setCookie(
+        const WebViewCookie(
+          name: 'PHPSESSID', 
+          value: '', // مقدار خالص آیدی سشن
+          domain: 'esalatcar.ir', 
+          path: '/',
+        ),
+      );
+    }
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -42,8 +60,8 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
             setState(() => _isLoading = false);
           },
           onWebResourceError: (WebResourceError error) {
-            // اگر سایت کلاً باز نشد
-            if (error.errorType == WebResourceErrorType.connect || error.errorType == WebResourceErrorType.hostLookup) {
+            if (error.errorType == WebResourceErrorType.connect || 
+                error.errorType == WebResourceErrorType.hostLookup) {
               setState(() {
                 _isLoading = false;
                 _hasError = true;
@@ -61,16 +79,9 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
         ),
       );
 
-    // ==========================================
-    // لود کردن سایت با ارسال کوکی در هدر (مهم‌ترین بخش)
-    // ==========================================
+    // لود کردن صفحه سایت (با روش ساده و استاندارد)
     _controller.loadRequest(
-      LoadRequestParams(
-        uri: Uri.parse('https://esalatcar.ir/dashboard.php'),
-        headers: {
-          if (cookie != null && cookie.isNotEmpty) 'Cookie': cookie, // تزریق کوکی به هدر درخواست
-        },
-      ),
+      Uri.parse('https://esalatcar.ir/dashboard.php'),
     );
   }
 
@@ -78,6 +89,10 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
     // پاک کردن کوکی‌ها در فلاتر
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.remove('session_cookie');
+    
+    // پاک کردن کوکی از خود مرورگر وب‌ویو
+    final cookieManager = WebViewCookieManager();
+    await cookieManager.clearCookies();
 
     // خروج از اپلیکیشن و رفتن به صفحه لاگین
     if (mounted) {
@@ -109,7 +124,6 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
         return true;
       },
       child: Scaffold(
-        // استفاده از رنگ پس‌زمینه سایت تا هنگام لود شدن، صفحه طوسی دیده نشود
         backgroundColor: Colors.white,
         body: SafeArea(
           child: Stack(
