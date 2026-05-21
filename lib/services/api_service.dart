@@ -29,6 +29,14 @@ class ApiService {
   // چک کردن وضعیت لاگین
   static bool get isLoggedIn => _sessionCookie != null;
 
+  // ==========================================
+  // متد عمومی برای برگرداندن کوکی (اضافه شد)
+  // چون وب‌ویو برای تزریق کوکی به سایت به آن نیاز دارد
+  // ==========================================
+  static String? getSessionCookie() {
+    return _sessionCookie;
+  }
+
   // تابع لاگین
   static Future<Map<String, dynamic>> login(String username, String password) async {
     try {

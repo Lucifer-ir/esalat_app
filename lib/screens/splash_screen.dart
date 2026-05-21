@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import '../services/api_service.dart';
 import 'login_screen.dart';
-import 'dashboard_webview_screen.dart'; // ایمپورت صفحه وب‌ویو
+import 'dashboard_webview_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -27,34 +27,27 @@ class _SplashScreenState extends State<SplashScreen> {
       _hasInternet = true;
     });
 
-    // چک کردن اتصال اینترنت
     try {
       final result = await InternetAddress.lookup('esalatcar.ir');
       if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-        // اینترنت وصل است
         _navigateToNextScreen();
       } else {
         _showNoInternet();
       }
     } on SocketException catch (_) {
-      // اینترنت قطع است
       _showNoInternet();
     }
   }
 
   void _navigateToNextScreen() async {
     await ApiService.loadSessionCookie();
-    
-    // تاخیر کوتاه برای نمایش لوگو
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 
     if (ApiService.isLoggedIn) {
-      // اگر کوکی سشن داشت، برو صفحه داشبورد سایت (وب‌ویو)
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const DashboardWebviewScreen()));
     } else {
-      // اگر نداشت، برو صفحه لاگین فلاتر
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
     }
   }
@@ -99,9 +92,10 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
               const SizedBox(height: 30),
               ElevatedButton.icon(
-                onPressed: _startApp, // تلاش مجدد
-                icon: const Icon(Icons.refresh, color: Colors.blue.shade900),
-                label: const Text('تلاش مجدد', style: TextStyle(color: Colors.blue.shade900, fontFamily: 'Peyda', fontWeight: FontWeight.bold)),
+                onPressed: _startApp,
+                // حذف کلمه const به دلیل استفاده از shade900
+                icon: Icon(Icons.refresh, color: Colors.blue.shade900),
+                label: Text('تلاش مجدد', style: TextStyle(color: Colors.blue.shade900, fontFamily: 'Peyda', fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
