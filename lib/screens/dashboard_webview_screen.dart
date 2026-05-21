@@ -23,7 +23,25 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
     _setupWebView();
   }
 
-  void _setupWebView() {
+  void _setupWebView() async {
+    // ==========================================
+    // تزریق کوکی به وب‌ویو قبل از لود شدن سایت
+    // ==========================================
+    await ApiService.loadSessionCookie();
+    String? rawCookie = ApiService.getSessionCookie();
+    
+    if (rawCookie != null) {
+      // استخراج مقدار PHPSESSID از رشته کوکی
+      String cookieValue = rawCookie.replaceAll('PHPSESSID=', '');
+      
+      // ذخیره کوکی در حافظه مخصوص وب‌ویو
+      await WebViewCookieManager().setCookie(
+        const WebViewCookie(name: 'PHPSESSID', value: '', domain: 'esalatcar.ir', path: '/'),
+      );
+      // یک روش مستقیم‌تر برای تنظیم کوکی در اندروید
+      await _controller.runJavaScript("document.cookie='PHPSESSID=$cookieValue; path=/; domain=esalatcar.ir; SameSite=Lax; Secure';");
+    }
+
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -61,9 +79,12 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
   }
 
   void _handleLogout() async {
-    // پاک کردن کوکی‌ها در فلاتر
+    // پاک کردن کوکی‌ها در فلاتر و وب‌ویو
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.remove('session_cookie');
+    
+    // پاک کردن کوکی از خود وب‌ویو
+    await WebViewCookieManager().clearCookies();
 
     // خروج از اپلیکیشن و رفتن به صفحه لاگین
     if (mounted) {
