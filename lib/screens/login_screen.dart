@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import 'home_screen.dart';
+import 'dashboard_webview_screen.dart'; // اضافه شد
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,10 +23,9 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result['success']) {
-      // اگر ادمین بود یا اشتراک داشت، موفقیت آمیز است
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => DashboardWebviewScreen()));
+      // اصلاح شد: اضافه شدن کلمه const
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const DashboardWebviewScreen()));
     } else {
-      // نمایش پیام ارور که از سرور (api.php) آمده است (مثلا: اشتراک شما به پایان رسیده است)
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message'] ?? 'خطا در ورود', style: const TextStyle(fontFamily: 'Peyda')), 

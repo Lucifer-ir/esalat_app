@@ -55,10 +55,11 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
 
     // ارسال کوکی به وب‌ویو برای لاگین خودکار در سایت
     _controller.loadRequest(
-      LoadRequestParams(
-        uri: Uri.parse('https://esalatcar.ir/dashboard.php'),
+      HttpRequest(
+        HttpMethod.get,
+        Uri.parse('https://esalatcar.ir/dashboard.php'), // تغییر به https
         headers: {
-          'Cookie': ApiService.getSessionCookie(),
+          'Cookie': ApiService.getSessionCookie() ?? '',
         },
       ),
     );
@@ -79,7 +80,8 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
     }
   }
 
-  void _reloadWebView() {
+  // اصلاح نام متد (حرف R کوچک شد)
+  void _reloadWebView() { 
     setState(() {
       _hasError = false;
       _isLoading = true;
@@ -102,7 +104,7 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
           child: Stack(
             children: [
               if (_hasError)
-                NoInternetScreen(onRetry: _ReloadWebView)
+                NoInternetScreen(onRetry: _reloadWebView) // نام متد اصلاح شد
               else
                 WebViewWidget(controller: _controller),
               
