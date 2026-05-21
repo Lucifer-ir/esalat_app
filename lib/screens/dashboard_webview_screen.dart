@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:webview_flutter_android/webview_flutter_android.dart'; // برای اندروید
+import 'package:shared_preferences/shared_preferences.dart'; // ایمپورت اضافه شد
 import '../services/api_service.dart';
 import 'login_screen.dart';
 import 'no_internet_screen.dart';
@@ -38,14 +38,12 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
             setState(() => _isLoading = false);
           },
           onWebResourceError: (WebResourceError error) {
-            // اگر اینترنت قطع بود یا سایت لود نشد
             setState(() {
               _isLoading = false;
               _hasError = true;
             });
           },
           onNavigationRequest: (NavigationRequest request) {
-            // چک کردن دکمه خروج سایت
             if (request.url.contains('logout=1') || request.url.contains('action=logout')) {
               _handleLogout();
               return NavigationDecision.prevent;
@@ -55,33 +53,24 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
         ),
       );
 
-    // تزریق کوکی به وب‌ویو (بسیار مهم برای رد نشدن از لاگین سایت)
-    if (_controller.platform is AndroidWebViewController) {
-      final androidController = _controller.platform as AndroidWebViewController;
-      androidController.loadRequest(
-        LoadRequestParams(
-          uri: Uri.parse('https://esalatcar.ir/dashboard.php'),
-          headers: {
-            'Cookie': ApiService._sessionCookie ?? '', // فرستادن کوکی فلاتر به سایت
-          },
-        ),
-      );
-    } else {
-      _controller.loadRequest(
-        Uri.parse('https://esalatcar.ir/dashboard.php'),
-      );
-    }
+    // ارسال کوکی به وب‌ویو برای لاگین خودکار در سایت
+    _controller.loadRequest(
+      LoadRequestParams(
+        uri: Uri.parse('https://esalatcar.ir/dashboard.php'),
+        headers: {
+          'Cookie': ApiService.getSessionCookie(), // استفاده از متد عمومی به جای متغیر پرایوت
+        },
+      ),
+    );
   }
 
   void _handleLogout() async {
-    await ApiService.loadSessionCookie();
-    if (ApiService.isLoggedIn) {
-      // پاک کردن کوکی‌ها در فلاتر
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.remove('session_cookie');
-      ApiService._sessionCookie = null;
+    // پاک کردن کوکی‌ها در فلاتر
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.remove('session_cookie');
 
-      // رفتن به صفحه لاگین
+    // خروج از اپلیکیشن و رفتن به صفحه لاگین
+    if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -90,7 +79,7 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
     }
   }
 
-  void _reloadWebView() {
+  void _reloadWebView() { // اصلاح نام متد (حرف R بزرگ بود)
     setState(() {
       _hasError = false;
       _isLoading = true;
@@ -102,7 +91,6 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        // اگر کاربر دکمه برگشت گوشی را زد، در وب‌ویو به صفحه قبلی برگردد
         if (await _controller.canGoBack()) {
           _controller.goBack();
           return false;
@@ -114,7 +102,7 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
           child: Stack(
             children: [
               if (_hasError)
-                NoInternetScreen(onRetry: _ReloadWebView) // نمایش صفحه قطعی
+                NoInternetScreen(onRetry: _reloadWebView) // اصلاح نام متد
               else
                 WebViewWidget(controller: _controller),
               
