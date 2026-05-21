@@ -44,6 +44,7 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
             });
           },
           onNavigationRequest: (NavigationRequest request) {
+            // تشخیص دکمه خروج سایت
             if (request.url.contains('logout=1') || request.url.contains('action=logout')) {
               _handleLogout();
               return NavigationDecision.prevent;
@@ -53,15 +54,9 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
         ),
       );
 
-    // ارسال کوکی به وب‌ویو برای لاگین خودکار در سایت
+    // لود کردن صفحه سایت
     _controller.loadRequest(
-      HttpRequest(
-        HttpMethod.get,
-        Uri.parse('https://esalatcar.ir/dashboard.php'), // تغییر به https
-        headers: {
-          'Cookie': ApiService.getSessionCookie() ?? '',
-        },
-      ),
+      Uri.parse('https://esalatcar.ir/dashboard.php'),
     );
   }
 
@@ -80,8 +75,7 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
     }
   }
 
-  // اصلاح نام متد (حرف R کوچک شد)
-  void _reloadWebView() { 
+  void _reloadWebView() {
     setState(() {
       _hasError = false;
       _isLoading = true;
@@ -104,7 +98,7 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
           child: Stack(
             children: [
               if (_hasError)
-                NoInternetScreen(onRetry: _reloadWebView) // نام متد اصلاح شد
+                NoInternetScreen(onRetry: _reloadWebView)
               else
                 WebViewWidget(controller: _controller),
               
