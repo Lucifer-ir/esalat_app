@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // ایمپورت اضافه شد
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
 import 'no_internet_screen.dart';
@@ -58,7 +58,7 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
       LoadRequestParams(
         uri: Uri.parse('https://esalatcar.ir/dashboard.php'),
         headers: {
-          'Cookie': ApiService.getSessionCookie(), // استفاده از متد عمومی به جای متغیر پرایوت
+          'Cookie': ApiService.getSessionCookie(),
         },
       ),
     );
@@ -79,7 +79,7 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
     }
   }
 
-  void _reloadWebView() { // اصلاح نام متد (حرف R بزرگ بود)
+  void _reloadWebView() {
     setState(() {
       _hasError = false;
       _isLoading = true;
@@ -102,7 +102,7 @@ class _DashboardWebviewScreenState extends State<DashboardWebviewScreen> {
           child: Stack(
             children: [
               if (_hasError)
-                NoInternetScreen(onRetry: _reloadWebView) // اصلاح نام متد
+                NoInternetScreen(onRetry: _ReloadWebView)
               else
                 WebViewWidget(controller: _controller),
               
