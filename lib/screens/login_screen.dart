@@ -24,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (result['success']) {
       // اگر ادمین بود یا اشتراک داشت، موفقیت آمیز است
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const DashboardWebviewScreen()));
     } else {
       // نمایش پیام ارور که از سرور (api.php) آمده است (مثلا: اشتراک شما به پایان رسیده است)
       ScaffoldMessenger.of(context).showSnackBar(

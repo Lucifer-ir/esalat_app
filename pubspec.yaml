@@ -18,6 +18,7 @@ dependencies:
   shared_preferences: ^2.2.3    # برای ذخیره کوکی/توکن لاگین
   provider: ^6.1.2              # برای مدیریت تم تاریک/روشن
   image_picker: ^1.0.7          # برای دسترسی به دوربین و گالری (ثبت تصویر)
+  webview_flutter: ^4.8.0
 
 dev_dependencies:
   flutter_test:
