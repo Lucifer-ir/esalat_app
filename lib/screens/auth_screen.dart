@@ -28,11 +28,11 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLoadingBtn = false;
 
   // داده‌های اسلایدر
-  final List<Map<String, String>> _slides = [
+  final List<Map<String, dynamic>> _slides = [
     {
       'icon': Icons.verified_user,
       'title': 'استعلام اصالت',
-      'desc': 'با یک کلیک، اصالت هر خودرو را استعلام کنید و از خرید خودروی تصادفی در امان باشید.',
+      'desc': 'با یک کلیک، اصالت هر خودرو را استعلام کنید...',
     },
     {
       'icon': Icons.history,
