@@ -89,7 +89,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            const Icon(Icons.alert_circle_outline, color: AppColors.primary, size: 20),
+            const Icon(Icons.error_outline, color: AppColors.primary, size: 20),
             const SizedBox(width: 8),
             Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontFamily: 'Peyda', color: AppColors.textPrimary)),
           ]),

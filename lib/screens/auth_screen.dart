@@ -50,7 +50,6 @@ class _AuthScreenState extends State<AuthScreen> {
     _otpController = OTPTextEditController(
       codeLength: 4,
       onCodeReceive: (code) {
-        // پر شدن خودکار کد از پیامک
         if (code.length == 4) {
           _verifyOtp();
         }
@@ -58,11 +57,8 @@ class _AuthScreenState extends State<AuthScreen> {
     )..startListenUserConsent(
         (code) {
           final exp = RegExp(r'(\d{4})');
-          return exp.firstMatch(code)?.group(0) ?? '';
+          return exp.firstMatch(code ?? '')?.group(0) ?? ''; // اصلاح خطای String?
         },
-        strategies: [
-          SelectorStrategy.consentFirst,
-        ],
       );
   }
 
@@ -245,9 +241,8 @@ class _AuthScreenState extends State<AuthScreen> {
     _otpController.startListenUserConsent(
       (code) {
         final exp = RegExp(r'(\d{4})');
-        return exp.firstMatch(code)?.group(0) ?? '';
+        return exp.firstMatch(code ?? '')?.group(0) ?? ''; // اصلاح خطای String?
       },
-      strategies: [SelectorStrategy.consentFirst],
     );
 
     showModalBottomSheet(
