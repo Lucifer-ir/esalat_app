@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // اضافه شود
+import 'package:flutter/services.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_theme.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
-import 'password_screen.dart'; // اضافه کردن صفحه رمز
+import 'password_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  final ValueNotifier<ThemeMode> themeNotifier;
+  const HomeScreen({Key? key, required this.themeNotifier}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -17,8 +18,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   bool _hasSubscription = false;
-  bool _isUnlocked = false; // آیا قفل صفحه باز شده یا نه؟
-  bool _checkingLock = true; // آیا در حال چک کردن وضعیت قفل است؟
+  bool _isUnlocked = false;
+  bool _checkingLock = true;
 
   @override
   void initState() {
@@ -26,39 +27,32 @@ class _HomeScreenState extends State<HomeScreen> {
     _checkLockStatus();
   }
 
-  // بررسی اینکه آیا رمز عبور تنظیم شده است یا خیر
   void _checkLockStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool hasPassword = prefs.getBool('hasPassword') ?? false;
     String? savedPass = prefs.getString('appPassword');
 
     if (hasPassword && savedPass != null) {
-      // اگر رمز داشت، صفحه قفل را نمایش بده
       setState(() => _checkingLock = false);
       _showLockScreen();
     } else {
-      // اگر رمز نداشت، مستقیم محتوا را لود کن
       _loadHomeData();
     }
   }
 
   void _showLockScreen() {
-    // نمایش صفحه رمز عبور به صورت مودال (بدون امکان بستن با دکمه بک)
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => const PasswordScreen(mode: PasswordMode.lockScreen),
-        fullscreenDialog: true, // این باعث میشه دکمه بک نداشته باشه
+        fullscreenDialog: true,
       ),
     ).then((isSuccess) {
       if (isSuccess == true) {
-        // اگر رمز درست بود، وارد صفحه اصلی شو
         setState(() => _isUnlocked = true);
         _loadHomeData();
       } else {
-        // اگر رمز اشتباه بود یا صفحه رو بست، از برنامه خارج شو (یا هر لاجیک دیگری)
-        // اینجا برای امنیت بیشتر می‌تونیم اپ رو ببندیم یا دوباره همون صفحه قفل رو بیاریم
-        SystemNavigator.pop(); // بستن اپلیکیشن
+        SystemNavigator.pop();
       }
     });
   }
@@ -87,9 +81,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // لاجیک تغییر تم
+  void _toggleTheme() {
+    if (widget.themeNotifier.value == ThemeMode.light) {
+      widget.themeNotifier.value = ThemeMode.dark;
+    } else {
+      widget.themeNotifier.value = ThemeMode.light;
+    }
+    setState(() {}); // برای آپدیت شدن آیکون دکمه
+  }
+
   @override
   Widget build(BuildContext context) {
-    // اگر در حال چک کردن قفل است، یک صفحه خالی یا لودینگ نشان بده
     if (_checkingLock || !_isUnlocked) {
       return const Scaffold(
         backgroundColor: AppColors.primary,
@@ -97,29 +100,69 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // اگر قفل باز شد، محتوای اصلی را نشان بده
+    bool isDark = widget.themeNotifier.value == ThemeMode.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA), // پس زمینه تاریک/روشن
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F7FA), // رنگ اپ‌بار همرنگ پس‌زمینه
         elevation: 0,
         centerTitle: false,
-        title: const Text(
+        automaticallyImplyLeading: false, // حذف دکمه برگشت خودکار
+        title: Text(
           'اصالت خودرو', 
-          style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary, fontFamily: 'Peyda')
+          style: TextStyle(
+            fontWeight: FontWeight.w700, 
+            color: isDark ? Colors.white : AppColors.textPrimary, 
+            fontFamily: 'Peyda'
+          )
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.person_outline, color: AppColors.primary),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+          // گزینه حساب کاربری (سفید، انحنای 8، آیکون مشکی)
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+            decoration: BoxDecoration(
+              color: Colors.white, 
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: Icon(Icons.person_outline, color: isDark ? AppColors.primary : Colors.black, size: 20),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: AppColors.primary),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+          // نوتیفیکیشن
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+            decoration: BoxDecoration(
+              color: Colors.white, 
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: Icon(Icons.notifications_none, color: isDark ? AppColors.primary : Colors.black, size: 20),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.dark_mode_outlined, color: AppColors.primary),
-            onPressed: () {},
+          // تغییر تم
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            decoration: BoxDecoration(
+              color: Colors.white, 
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: Icon(
+                isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, // تغییر آیکون بر اساس تم
+                color: isDark ? AppColors.primary : Colors.black, 
+                size: 20
+              ),
+              onPressed: _toggleTheme,
+            ),
           ),
         ],
       ),
@@ -131,23 +174,27 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           itemCount: 15,
           itemBuilder: (context, index) {
-            if (_isLoading) return _buildSkeletonCard();
-            return _buildCarCard(index);
+            if (_isLoading) return _buildSkeletonCard(isDark);
+            return _buildCarCard(index, isDark);
           },
         ),
       ),
     );
   }
 
-  Widget _buildSkeletonCard() {
+  Widget _buildSkeletonCard(bool isDark) {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[200]!, highlightColor: Colors.white,
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.white,
       child: Container(
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : Colors.white, 
+          borderRadius: BorderRadius.circular(16)
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(width: 60, height: 60, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
+            Container(width: 60, height: 60, decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
             const SizedBox(height: 16),
             Container(width: 80, height: 14, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
           ],
@@ -156,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCarCard(int index) {
+  Widget _buildCarCard(int index, bool isDark) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
       duration: Duration(milliseconds: 400 + (index * 50)),
@@ -168,8 +215,9 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white, 
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: Material(
           color: Colors.transparent,
@@ -187,9 +235,13 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.directions_car, size: 50, color: AppColors.primary),
+                Icon(Icons.directions_car, size: 50, color: AppColors.primary),
                 const SizedBox(height: 12),
-                Text('خودرو ${index + 1}', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w500, fontFamily: 'Peyda')),
+                Text('خودرو ${index + 1}', style: TextStyle(
+                  color: isDark ? Colors.white : AppColors.textPrimary, 
+                  fontWeight: FontWeight.w500, 
+                  fontFamily: 'Peyda'
+                )),
               ],
             ),
           ),

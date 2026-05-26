@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_theme.dart';
 
-// اضافه شدن lockScreen
 enum PasswordMode { set, confirm, confirmForEdit, confirmForRemove, lockScreen }
 
 class PasswordScreen extends StatefulWidget {
   final PasswordMode mode;
-  const PasswordScreen({Key? key, required this.mode}) : super(key: key);
+  final String? firstPass; // اضافه شدن متغیر برای دریافت رمز اول
+
+  const PasswordScreen({Key? key, required this.mode, this.firstPass}) : super(key: key);
 
   @override
   State<PasswordScreen> createState() => _PasswordScreenState();
@@ -15,13 +16,15 @@ class PasswordScreen extends StatefulWidget {
 
 class _PasswordScreenState extends State<PasswordScreen> {
   String _enteredPass = '';
-  String _firstPass = '';
+  late String _firstPass;
   bool _isLoading = false;
   String _title = '';
 
   @override
   void initState() {
     super.initState();
+    // دریافت رمز اول از ویجت قبلی (اگر وجود داشت)
+    _firstPass = widget.firstPass ?? '';
     _setTitle();
   }
 
@@ -30,7 +33,7 @@ class _PasswordScreenState extends State<PasswordScreen> {
     else if (widget.mode == PasswordMode.confirm) _title = 'تایید رمز عبور';
     else if (widget.mode == PasswordMode.confirmForEdit) _title = 'وارد کردن رمز فعلی';
     else if (widget.mode == PasswordMode.confirmForRemove) _title = 'تایید برای حذف رمز';
-    else if (widget.mode == PasswordMode.lockScreen) _title = 'رمز عبور'; // اضافه شد
+    else if (widget.mode == PasswordMode.lockScreen) _title = 'رمز عبور';
   }
 
   void _onKeyTap(String value) {
@@ -51,13 +54,15 @@ class _PasswordScreenState extends State<PasswordScreen> {
     if (widget.mode == PasswordMode.set) {
       _firstPass = _enteredPass;
       setState(() => _enteredPass = '');
-      // رفتن به مرحله تایید
+      // ارسال رمز اول به صفحه تایید از طریق آرگومان firstPass
       Future.delayed(const Duration(milliseconds: 300), () {
-        if(mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PasswordScreen(mode: PasswordMode.confirm)));
+        if(mounted) Navigator.pushReplacement(
+          context, 
+          MaterialPageRoute(builder: (_) => PasswordScreen(mode: PasswordMode.confirm, firstPass: _firstPass))
+        );
       });
     } 
     else if (widget.mode == PasswordMode.confirm) {
-      if (_firstPass.isEmpty) _firstPass = ModalRoute.of(context)?.settings.arguments as String? ?? ''; // در صورت ری‌بیلد
       if (_firstPass == _enteredPass) {
         await prefs.setString('appPassword', _enteredPass);
         await prefs.setBool('hasPassword', true);
@@ -85,10 +90,8 @@ class _PasswordScreenState extends State<PasswordScreen> {
         setState(() => _enteredPass = '');
       }
     }
-    // اضافه شدن لاجیک برای قفل صفحه هوم
     else if (widget.mode == PasswordMode.lockScreen) {
       if (_enteredPass == savedPass) {
-        // بازگشت به صفحه هوم با سیگنال موفقیت (true)
         Navigator.pop(context, true);
       } else {
         _showAlertError('رمز اشتباه است');
@@ -97,13 +100,47 @@ class _PasswordScreenState extends State<PasswordScreen> {
     }
   }
 
+  // الرت شناور سبز (موفقیت)
   void _showAlertSuccess(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.green));
-    Navigator.pop(context);
+    OverlayEntry? overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 50, left: 16, right: 16,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10)]),
+            child: Text(msg, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontFamily: 'Peyda', fontSize: 14, fontWeight: FontWeight.w500)),
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context).insert(overlayEntry);
+    Future.delayed(const Duration(seconds: 2), () {
+      overlayEntry?.remove();
+      Navigator.pop(context); // بستن صفحه بعد از نمایش الرت
+    });
   }
 
+  // الرت شناور قرمز (خطا)
   void _showAlertError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: AppColors.danger));
+    OverlayEntry? overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 50, left: 16, right: 16,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(color: AppColors.danger, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10)]),
+            child: Text(msg, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontFamily: 'Peyda', fontSize: 14, fontWeight: FontWeight.w500)),
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context).insert(overlayEntry);
+    Future.delayed(const Duration(seconds: 2), () => overlayEntry?.remove());
   }
 
   @override
@@ -112,7 +149,6 @@ class _PasswordScreenState extends State<PasswordScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white, elevation: 0, centerTitle: true,
-        // مخفی کردن دکمه برگشت در حالت قفل صفحه (برای امنیت)
         leading: widget.mode == PasswordMode.lockScreen 
           ? const SizedBox.shrink() 
           : IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary), onPressed: () => Navigator.pop(context)),
@@ -132,7 +168,11 @@ class _PasswordScreenState extends State<PasswordScreen> {
           const SizedBox(height: 24),
           _buildDots(),
           const Spacer(),
-          _buildKeyboard(),
+          // قرار دادن کیبورد در Directionality LTR تا برعکس نشود
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: _buildKeyboard(),
+          ),
           const SizedBox(height: 20),
         ],
       ),
@@ -205,7 +245,7 @@ class _PasswordScreenState extends State<PasswordScreen> {
         child: Container(
           margin: const EdgeInsets.all(6), height: 50,
           decoration: BoxDecoration(color: AppColors.danger.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-          child: const Center(child: Text('پاک کردن', style: TextStyle(color: AppColors.danger, fontFamily: 'Peyda', fontSize: 12, fontWeight: FontWeight.bold))),
+          child: const Center(child: Text('Clear', style: TextStyle(color: AppColors.danger, fontFamily: 'Peyda', fontSize: 12, fontWeight: FontWeight.bold))),
         ),
       ),
     );
