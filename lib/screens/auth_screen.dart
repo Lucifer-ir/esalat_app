@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:sms_autofill/sms_autofill.dart';
 import '../core/app_theme.dart';
-import 'terms_screen.dart'; // ایمپورت صفحه قوانین
+import 'terms_screen.dart';
 import 'home_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -18,8 +18,9 @@ class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController _otpController = TextEditingController();
   
   Timer? _timer;
-  int _start = 120; // 2 دقیقه
+  int _start = 120;
   bool _isTimerActive = false;
+  bool _isSheetOpen = false; // کنترل اینکه شیت فقط یکبار باز شود
 
   @override
   void dispose() {
@@ -31,31 +32,30 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _showPhoneSheet() {
+    if (_isSheetOpen) return; // اگر شیت باز بود، دیگه بازش نکن
+    setState(() => _isSheetOpen = true);
+    
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // جلوگیری از صفحه سیاه هنگام باز شدن کیبورد
+      isScrollControlled: true,
       isDismissible: false,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent, // شفاف شدن پس زمینه برای دیدن رنگ آبی
       builder: (context) => _buildPhoneUI(),
     );
   }
 
   void _showOtpSheet() {
     Navigator.pop(context); // بستن شیت شماره
+    setState(() => _isSheetOpen = false);
+    
     _startTimer();
     _startListeningOtp();
     
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // جلوگیری از صفحه سیاه
+      isScrollControlled: true,
       isDismissible: false,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent, // شفاف شدن پس زمینه
       builder: (context) => _buildOtpUI(),
     );
   }
@@ -111,22 +111,26 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // نمایش شیت شماره بلافاصله بعد از باز شدن صفحه
+    // نمایش شیت فقط یکبار
     WidgetsBinding.instance.addPostFrameCallback((_) => _showPhoneSheet());
     
     return const Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.primary, // پس زمینه همین صفحه هم آبی شد
       body: SizedBox.shrink(),
     );
   }
 
-  // --------------------------------- UI شماره موبایل (راست چین) ---------------------------------
+  // --------------------------------- UI شماره موبایل ---------------------------------
   Widget _buildPhoneUI() {
-    return Directionality(
-      textDirection: TextDirection.rtl, // راست‌چین کردن کل محتوا
-      child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom), // حل مشکل کیبورد
-        child: SingleChildScrollView(
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        child: Container(
+          margin: const EdgeInsets.only(top: 100), // فاصله از بالا تا رنگ آبی دیده شود
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
@@ -147,12 +151,11 @@ class _AuthScreenState extends State<AuthScreen> {
                 TextField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  textAlign: TextAlign.left, // شماره موبایل چپ چین باشد ولی لیبل راست چین
+                  textAlign: TextAlign.left,
                   style: const TextStyle(fontFamily: 'Peyda', letterSpacing: 2),
                   cursorColor: AppColors.primary,
                   decoration: InputDecoration(
-                    labelText: 'شماره موبایل',
-                    hintText: '0912',
+                    labelText: 'شماره موبایل', // لیبل بالا میره
                     labelStyle: const TextStyle(color: AppColors.textSecondary, fontFamily: 'Peyda'),
                     floatingLabelStyle: const TextStyle(color: AppColors.primary, fontFamily: 'Peyda'),
                     filled: true,
@@ -177,46 +180,17 @@ class _AuthScreenState extends State<AuthScreen> {
                   child: Wrap(
                     alignment: WrapAlignment.center,
                     children: [
-                      const Text(
-                        'ورود شما به معنای پذیرش ',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontFamily: 'Peyda'),
-                      ),
+                      const Text('ورود شما به معنای پذیرش ', style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontFamily: 'Peyda')),
                       GestureDetector(
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (_) => const TermsScreen(
-                              title: 'شرایط اصالت خودرو',
-                              content: 'متن طولانی شرایط استفاده از اپلیکیشن اصالت خودرو در اینجا قرار می‌گیرد. کاربر با ثبت نام تمامی این موارد را می‌پذیرد.',
-                            ),
-                          ));
-                        },
-                        child: const Text(
-                          'شرایط اصالت خودرو',
-                          style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold, fontFamily: 'Peyda'),
-                        ),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsScreen(title: 'شرایط اصالت خودرو', content: 'متن طولانی شرایط استفاده...'))),
+                        child: const Text('شرایط اصالت خودرو', style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold, fontFamily: 'Peyda')),
                       ),
-                      const Text(
-                        ' و ',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontFamily: 'Peyda'),
-                      ),
+                      const Text(' و ', style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontFamily: 'Peyda')),
                       GestureDetector(
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (_) => const TermsScreen(
-                              title: 'حریم خصوصی',
-                              content: 'متن طولایی حریم خصوصی و نحوه برخورد با اطلاعات کاربران در اپلیکیشن اصالت خودرو در اینجا قرار می‌گیرد.',
-                            ),
-                          ));
-                        },
-                        child: const Text(
-                          'حریم خصوصی',
-                          style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold, fontFamily: 'Peyda'),
-                        ),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsScreen(title: 'حریم خصوصی', content: 'متن طولانی حریم خصوصی...'))),
+                        child: const Text('حریم خصوصی', style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold, fontFamily: 'Peyda')),
                       ),
-                      const Text(
-                        ' است.',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontFamily: 'Peyda'),
-                      ),
+                      const Text(' است.', style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontFamily: 'Peyda')),
                     ],
                   ),
                 ),
@@ -229,15 +203,19 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  // --------------------------------- UI کد تایید (راست چین) ---------------------------------
+  // --------------------------------- UI کد تایید ---------------------------------
   Widget _buildOtpUI() {
     String formattedTime = "${(_start ~/ 60).toString().padLeft(2, '0')}:${(_start % 60).toString().padLeft(2, '0')}";
 
-    return Directionality(
-      textDirection: TextDirection.rtl, // راست‌چین کردن
-      child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: SingleChildScrollView(
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        child: Container(
+          margin: const EdgeInsets.only(top: 100),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
@@ -258,10 +236,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     if (_isTimerActive)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.mattedGrey,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
+                        decoration: BoxDecoration(color: AppColors.mattedGrey, borderRadius: BorderRadius.circular(20)),
                         child: Text(formattedTime, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary, fontFamily: 'Peyda')),
                       )
                     else
@@ -269,10 +244,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         onTap: _sendCodeToServer,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.mattedGrey,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
+                          decoration: BoxDecoration(color: AppColors.mattedGrey, borderRadius: BorderRadius.circular(20)),
                           child: const Text('ارسال مجدد', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontFamily: 'Peyda')),
                         ),
                       ),
@@ -282,15 +254,13 @@ class _AuthScreenState extends State<AuthScreen> {
                 Text('لطفا کد ارسال شده به شماره ${_phoneController.text} را وارد کنید', style: const TextStyle(color: AppColors.textSecondary, fontFamily: 'Peyda')),
                 const SizedBox(height: 24),
                 Directionality(
-                  textDirection: TextDirection.ltr, // فیلد کد باید چپ چین باشد
+                  textDirection: TextDirection.ltr,
                   child: PinFieldAutoFill(
                     controller: _otpController,
                     codeLength: 4,
                     keyboardType: TextInputType.number,
                     onCodeChanged: (code) {
-                      if (code != null && code.length == 4) {
-                        _verifyOtp();
-                      }
+                      if (code != null && code.length == 4) _verifyOtp();
                     },
                     decoration: BoxLooseDecoration(
                       gapSpace: 4,
@@ -298,12 +268,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       bgColorBuilder: const FixedColorBuilder(AppColors.mattedGrey),
                       radius: const Radius.circular(8),
                       strokeWidth: 2,
-                      textStyle: const TextStyle(
-                        fontSize: 24,
-                        color: AppColors.textPrimary,
-                        fontFamily: 'Peyda',
-                        fontWeight: FontWeight.w700,
-                      ),
+                      textStyle: const TextStyle(fontSize: 24, color: AppColors.textPrimary, fontFamily: 'Peyda', fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -311,8 +276,10 @@ class _AuthScreenState extends State<AuthScreen> {
                 Center(
                   child: GestureDetector(
                     onTap: () {
-                      Navigator.pop(context); // برگشت به شیت شماره
+                      Navigator.pop(context);
+                      setState(() => _isSheetOpen = false);
                       _timer?.cancel();
+                      _showPhoneSheet(); // بازگشت به شیت شماره
                     },
                     child: const Text('ویرایش شماره موبایل', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500, fontFamily: 'Peyda')),
                   ),
