@@ -28,6 +28,7 @@ dependencies:
   url_launcher: ^6.2.4 # برای باز کردن لینک درگاه پرداخت
   cached_network_image: ^3.3.1 # برای لود کردن بنر تبلیغاتی با شیمر
   app_links: ^6.1.4 # برای دریافت لینک بازگشت از درگاه پرداخت
+  shamsi_date: ^0.14.0 # برای تبدیل تاریخ میلادی به شمسی
 
 dev_dependencies:
   flutter_test:

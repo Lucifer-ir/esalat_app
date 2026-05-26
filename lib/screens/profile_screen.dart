@@ -71,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 16),
               _buildMenuItem(context, icon: Icons.person_outline, title: 'اطلاعات کاربری', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UserInfoScreen()))),
               const SizedBox(height: 8),
-              _buildMenuItem(context, icon: Icons.card_membership_outlined, title: _isActive ? 'تمدید اشتراک' : 'خرید اشتراک', onTap: () { /* ناوبری به صفحه خرید */ }),
+            _buildMenuItem(context, icon: Icons.card_membership_outlined, title: _isActive ? 'تمدید اشتراک' : 'خرید اشتراک', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionScreen()))),
               const SizedBox(height: 8),
               _buildMenuItem(context, icon: Icons.lock_outline, title: 'رمز عبور', onTap: () => _handlePasswordTap(context)),
               const SizedBox(height: 8),
@@ -93,20 +93,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ویجت نیم‌دایره اشتراک
+  // ویجت نیم‌دایره اشتراک (بزرگ و شمسی)
   Widget _buildSubscriptionIndicator() {
     double percent = _daysLeft / 7; // بر اساس 7 روز رایگان
     if (percent > 1.0) percent = 1.0;
     if (percent < 0.0) percent = 0.0;
 
+    // تبدیل تاریخ به شمسی
+    String persianExpDate = '';
+    if (_expireDate != null) {
+      Jalali j = Jalali.fromDateTime(_expireDate!);
+      persianExpDate = "${j.year}/${j.month.toString().padLeft(2, '0')}/${j.day.toString().padLeft(2, '0')}";
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16), // افزایش ارتفاع
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
       child: Column(
         children: [
           CircularPercentIndicator(
-            radius: 80.0,
-            lineWidth: 12.0,
+            radius: 100.0, // افزایش سایز نیم دایره
+            lineWidth: 15.0, // ضخامت خط
             percent: _isActive ? percent : 0.0,
             animation: true,
             animationDuration: 1200,
@@ -116,26 +123,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
             center: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(_isActive ? Icons.check_circle_outline : Icons.cancel_outlined, color: _isActive ? AppColors.primary : AppColors.danger, size: 28),
-                const SizedBox(height: 4),
+                Icon(_isActive ? Icons.check_circle_outline : Icons.cancel_outlined, color: _isActive ? AppColors.primary : AppColors.danger, size: 36), // بزرگتر شدن آیکون
+                const SizedBox(height: 8),
                 Text(
                   _isActive ? '$_daysLeft روز' : 'منقضی',
-                  style: TextStyle(fontFamily: 'Peyda', fontWeight: FontWeight.w700, fontSize: 18, color: _isActive ? AppColors.primary : AppColors.danger),
+                  style: TextStyle(fontFamily: 'Peyda', fontWeight: FontWeight.w700, fontSize: 24, color: _isActive ? AppColors.primary : AppColors.danger), // بزرگتر شدن متن
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
             _isActive ? 'اشتراک شما فعال است' : 'اشتراک شما به پایان رسیده است',
-            style: TextStyle(fontFamily: 'Peyda', fontWeight: FontWeight.w500, color: _isActive ? AppColors.textPrimary : AppColors.danger),
+            style: TextStyle(fontFamily: 'Peyda', fontWeight: FontWeight.w600, fontSize: 16, color: _isActive ? AppColors.textPrimary : AppColors.danger),
           ),
-          if (_expireDate != null)
+          if (persianExpDate.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 4.0),
+              padding: const EdgeInsets.only(top: 8.0),
               child: Text(
-                'تاریخ انقضا: ${_expireDate!.year}/${_expireDate!.month.toString().padLeft(2, '0')}/${_expireDate!.day.toString().padLeft(2, '0')}',
-                style: const TextStyle(fontFamily: 'Peyda', fontSize: 12, color: AppColors.textSecondary),
+                'تاریخ انقضا: $persianExpDate',
+                style: const TextStyle(fontFamily: 'Peyda', fontSize: 14, color: AppColors.textSecondary),
               ),
             ),
         ],

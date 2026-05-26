@@ -4,11 +4,12 @@ import 'package:shimmer/shimmer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shamsi_date/shamsi_date.dart'; // تقویم شمسی
 import '../core/app_theme.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'password_screen.dart';
-import 'subscription_screen.dart'; // صفحه خرید اشتراک
+import 'subscription_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeNotifier;
@@ -24,15 +25,19 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isUnlocked = false;
   bool _checkingLock = true;
 
+  String _bannerUrl = '';
+  String _bannerLink = '';
+  Map<String, dynamic>? _announcement;
+
   final List<Map<String, dynamic>> _menuItems = [
-    {'icon': Icons.history, 'title': 'استعلام اصالت', 'route': 'auth'}, // اصلاح شد
-    {'icon': Icons.directions_car_filled_outlined, 'title': 'مشخصات فنی', 'route': 'tech'},
-    {'icon': Icons.build_outlined, 'title': 'سابقه تعمیرات', 'route': 'repair'},
-    {'icon': Icons.local_shipping_outlined, 'title': 'سابقه تصادف', 'route': 'accident'},
-    {'icon': Icons.color_lens_outlined, 'title': 'تغییر رنگ', 'route': 'color'},
-    {'icon': Icons.assignment_outlined, 'title': 'نمایش خلافی', 'route': 'fine'},
-    {'icon': Icons.price_check_outlined, 'title': 'ارزش‌گذاری', 'route': 'price'},
-    {'icon': Icons.local_gas_station_outlined, 'title': 'مصرف سوخت', 'route': 'fuel'},
+    {'icon': Icons.history, 'title': 'استعلام اصالت'},
+    {'icon': Icons.directions_car_filled_outlined, 'title': 'مشخصات فنی'},
+    {'icon': Icons.build_outlined, 'title': 'سابقه تعمیرات'},
+    {'icon': Icons.local_shipping_outlined, 'title': 'سابقه تصادف'},
+    {'icon': Icons.color_lens_outlined, 'title': 'تغییر رنگ'},
+    {'icon': Icons.assignment_outlined, 'title': 'نمایش خلافی'},
+    {'icon': Icons.price_check_outlined, 'title': 'ارزش‌گذاری'},
+    {'icon': Icons.local_gas_station_outlined, 'title': 'مصرف سوخت'},
   ];
 
   @override
@@ -61,9 +66,10 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _loadHomeData() {
+  void _loadHomeData() async {
     setState(() { _checkingLock = false; _isUnlocked = true; });
     _checkSubscription();
+    await _fetchHomeData(); // گرفتن بنر و اعلامیه از سایت
     Future.delayed(const Duration(seconds: 2), () { if (mounted) setState(() => _isLoading = false); });
   }
 
@@ -76,6 +82,62 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _fetchHomeData() async {
+    try {
+      // شبیه‌سازی درخواست به سایت (آدرس واقعی سایت)
+      // final response = await http.get(Uri.parse('https://websera.ir/api/home_data.php'));
+      // final data = jsonDecode(response.body);
+      
+      // داده‌های فرضی از سایت:
+      await Future.delayed(const Duration(seconds: 1));
+      setState(() {
+        _bannerUrl = 'https://websera.ir/banner.jpg';
+        _bannerLink = 'https://websera.ir/offer';
+        _announcement = {
+          'title': 'نسخه جدید منتشر شد!',
+          'message': 'همین الان اپلیکیشن را آپدیت کنید و از قابلیت‌های جدید استفاده کنید.',
+          'button_text': 'دانلود',
+          'expiry_date': '2025-05-20' // تاریخ انقضای اعلان از سایت
+        };
+      });
+
+      // چک کردن انقضای اعلان
+      if (_announcement != null) {
+        DateTime expiry = DateTime.parse(_announcement!['expiry_date']);
+        if (DateTime.now().isBefore(expiry)) {
+          _showAnnouncementSheet();
+        }
+      }
+    } catch (e) {
+      print("Error fetching home data: $e");
+    }
+  }
+
+  void _showAnnouncementSheet() {
+    showModalBottomSheet(
+      context: context, backgroundColor: Colors.transparent, isDismissible: false,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)))),
+          const SizedBox(height: 24),
+          Text(_announcement!['title'] as String, style: const TextStyle(fontFamily: 'Peyda', fontWeight: FontWeight.w700, fontSize: 18)),
+          const SizedBox(height: 12),
+          Text(_announcement!['message'] as String, style: const TextStyle(fontFamily: 'Peyda', color: AppColors.textSecondary, height: 1.5)),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity, height: 50,
+            child: ElevatedButton(
+              onPressed: () { Navigator.pop(context); launchUrl(Uri.parse('https://websera.ir/update')); },
+              child: Text(_announcement!['button_text'] as String, style: const TextStyle(fontFamily: 'Peyda', color: Colors.white)),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
   void _toggleTheme() async {
     bool isCurrentlyDark = widget.themeNotifier.value == ThemeMode.dark;
     widget.themeNotifier.value = isCurrentlyDark ? ThemeMode.light : ThemeMode.dark;
@@ -84,19 +146,22 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {});
   }
 
+  String _toPersianDate(DateTime dt) {
+    Jalali j = Jalali.fromDateTime(dt);
+    return "${j.year}/${j.month.toString().padLeft(2, '0')}/${j.day.toString().padLeft(2, '0')}";
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_checkingLock || !_isUnlocked) {
       return const Scaffold(backgroundColor: AppColors.primary, body: Center(child: CircularProgressIndicator(color: Colors.white)));
     }
-
     bool isDark = widget.themeNotifier.value == ThemeMode.dark;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F7FA),
-        elevation: 0, centerTitle: false, automaticallyImplyLeading: false,
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F7FA), elevation: 0, centerTitle: false, automaticallyImplyLeading: false,
         title: Text('اصالت خودرو', style: TextStyle(fontWeight: FontWeight.w700, color: isDark ? Colors.white : AppColors.textPrimary, fontFamily: 'Peyda')),
         actions: [
           _buildAppBarAction(context: context, isDark: isDark, icon: Icons.person_outline, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()))),
@@ -148,14 +213,12 @@ class _HomeScreenState extends State<HomeScreen> {
           )
         : GestureDetector(
             onTap: () {
-              // لینک بنر از سایت خوانده می‌شود
-              launchUrl(Uri.parse('http://websera.ir/offer'));
+              if(_bannerLink.isNotEmpty) launchUrl(Uri.parse(_bannerLink));
             },
             child: CachedNetworkImage(
-              imageUrl: 'http://websera.ir/banner.jpg', // آدرس تصویر بنر از سایت شما
-              height: 150,
-              width: double.infinity,
-              fit: BoxFit.cover,
+              imageUrl: _bannerUrl,
+              height: 150, width: double.infinity, fit: BoxFit.cover,
+              httpHeaders: const {"Accept": "image/*"}, // برای سایت‌های ایرانی
               placeholder: (context, url) => Shimmer.fromColors(
                 baseColor: isDark ? Colors.grey[800]! : Colors.grey[200]!,
                 highlightColor: isDark ? Colors.grey[700]! : Colors.white,
@@ -170,7 +233,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // آیتم‌های گرید 4 در 2
+  // آیتم‌های گرید
   Widget _buildGridItem(Map<String, dynamic> item, bool isDark) {
     return GestureDetector(
       onTap: () {
@@ -184,11 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
-            ),
+            decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E1E) : Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))]),
             child: Icon(item['icon'] as IconData, size: 28, color: AppColors.primary),
           ),
           const SizedBox(height: 8),
@@ -201,25 +260,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSkeletonGrid(bool isDark) {
     return Column(
       children: [
-        Shimmer.fromColors(
-          baseColor: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-          highlightColor: isDark ? Colors.grey[700]! : Colors.white,
-          child: Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: isDark ? Colors.grey[800] : Colors.white, borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.circle, size: 28)),
-        ),
+        Shimmer.fromColors(baseColor: isDark ? Colors.grey[800]! : Colors.grey[200]!, highlightColor: isDark ? Colors.grey[700]! : Colors.white, child: Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: isDark ? Colors.grey[800] : Colors.white, borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.circle, size: 28))),
         const SizedBox(height: 8),
-        Shimmer.fromColors(
-          baseColor: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-          highlightColor: isDark ? Colors.grey[700]! : Colors.white,
-          child: Container(width: 50, height: 10, decoration: BoxDecoration(color: isDark ? Colors.grey[800] : Colors.white, borderRadius: BorderRadius.circular(4))),
-        ),
+        Shimmer.fromColors(baseColor: isDark ? Colors.grey[800]! : Colors.grey[200]!, highlightColor: isDark ? Colors.grey[700]! : Colors.white, child: Container(width: 50, height: 10, decoration: BoxDecoration(color: isDark ? Colors.grey[800] : Colors.white, borderRadius: BorderRadius.circular(4)))),
       ],
     );
   }
 
-  // دو دکمه پایین صفحه
+  // دو دکمه پایین صفحه با فاصله 20 پیکسلی از کنترل‌های اندروید
   Widget _buildBottomActions(bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32), // 32 پیکسل فاصله از پایین برای کنترل اندروید
       decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E1E) : Colors.white, boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))]),
       child: Row(
         children: [
