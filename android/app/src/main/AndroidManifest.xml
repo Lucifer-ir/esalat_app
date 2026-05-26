@@ -20,10 +20,22 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            
+            <!-- اینتنت فیلتر اصلی برنامه (آیکون اپ) -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <!-- اینتنت فیلتر برای باز شدن اپلیکیشن از طریق لینک (درگاه پرداخت) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <!-- دقیقاً همان لینکی که در verify.php تنظیم کردیم -->
+                <data android:scheme="myapp" android:host="payment-result"/>
+            </intent-filter>
+
         </activity>
         
         <meta-data
