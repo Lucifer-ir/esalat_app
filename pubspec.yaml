@@ -27,7 +27,6 @@ dependencies:
   share_plus: ^7.2.1 # برای اشتراک گذاری متن دعوت
   url_launcher: ^6.2.4 # برای باز کردن لینک درگاه پرداخت
   cached_network_image: ^3.3.1 # برای لود کردن بنر تبلیغاتی با شیمر
-  uni_links: ^0.5.1
 
 dev_dependencies:
   flutter_test:

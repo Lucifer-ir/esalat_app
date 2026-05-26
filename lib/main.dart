@@ -1,14 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uni_links/uni_links.dart';
 import 'core/app_theme.dart';
 import 'screens/auth_screen.dart';
-import 'screens/payment_result_screen.dart'; // اضافه کردن صفحه نتیجه پرداخت
+import 'screens/payment_result_screen.dart';
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  _handleIncomingLinks(); // چک کردن لینک ورودی از درگاه پرداخت
   runApp(const MyApp());
+}
+
+// مدیریت لینک‌های ورودی (پرداخت درگاه)
+void _handleIncomingLinks() async {
+  // اگر اپلیکیشن با کلیک روی لینک باز شده باشد
+  // استفاده از متد داخلی خود فلاتر (بدون نیاز به پکیج اضافی)
+  final initialLink = await getInitialUri();
+  if (initialLink != null) {
+    _processLink(initialLink);
+  }
+}
+
+void _processLink(Uri uri) {
+  if (uri.host == 'payment-result') {
+    String status = uri.queryParameters['status'] ?? 'fail';
+    String amount = uri.queryParameters['amount'] ?? '0';
+    bool isSuccess = status == 'success';
+
+    // مکث کوتاه برای اطمینان از لود کامل اپلیکیشن
+    Future.delayed(const Duration(seconds: 1), () {
+      navigatorKey.currentState?.pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => PaymentResultScreen(isSuccess: isSuccess, amount: amount),
+        ),
+      );
+    });
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -23,52 +52,12 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _loadSavedTheme();
-    _initDeepLinkListener();
   }
 
   void _loadSavedTheme() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isDarkMode = prefs.getBool('isDarkMode') ?? false;
     themeNotifier.value = isDarkMode ? ThemeMode.dark : ThemeMode.light;
-  }
-
-  // گوش دادن به لینک‌های ورودی (مثل بازگشت از درگاه پرداخت)
-  void _initDeepLinkListener() async {
-    // بررسی اینکه آیا اپ با کلیک روی لینک باز شده است؟
-    try {
-      final initialUri = await getInitialUri();
-      if (initialUri != null) {
-        _handleDeepLink(initialUri);
-      }
-    } catch (e) {
-      print("Error handling deep link: $e");
-    }
-
-    // گوش دادن به لینک‌ها در زمانی که اپلیکیشن در پس‌زمینه است
-    uriLinkStream.listen((Uri? uri) {
-      if (uri != null) {
-        _handleDeepLink(uri);
-      }
-    }, onError: (err) {
-      print("Error listening deep link: $err");
-    });
-  }
-
-  // پردازش لینک بازگشت از درگاه
-  void _handleDeepLink(Uri uri) {
-    if (uri.host == 'payment-result') {
-      String status = uri.queryParameters['status'] ?? 'fail';
-      String amount = uri.queryParameters['amount'] ?? '0';
-      
-      bool isSuccess = status == 'success';
-
-      // ناوبری به صفحه نتیجه پرداخت
-      navigatorKey.currentState?.pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => PaymentResultScreen(isSuccess: isSuccess, amount: amount),
-        ),
-      );
-    }
   }
 
   @override
@@ -82,7 +71,7 @@ class _MyAppState extends State<MyApp> {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: currentMode,
-          navigatorKey: navigatorKey, // کلید ناوبری برای دسترسی از بیرون
+          navigatorKey: navigatorKey,
           home: const AuthScreen(),
           builder: (context, child) {
             return Directionality(
@@ -95,6 +84,3 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-
-// یک کلید سراسری برای ناوبری بدون context
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
