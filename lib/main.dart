@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:app_links/app_links.dart'; // پکیج جایگزین
 import 'core/app_theme.dart';
 import 'screens/auth_screen.dart';
 import 'screens/payment_result_screen.dart';
@@ -15,11 +16,16 @@ void main() {
 
 // مدیریت لینک‌های ورودی (پرداخت درگاه)
 void _handleIncomingLinks() async {
-  // اگر اپلیکیشن با کلیک روی لینک باز شده باشد
-  // استفاده از متد داخلی خود فلاتر (بدون نیاز به پکیج اضافی)
-  final initialLink = await getInitialUri();
-  if (initialLink != null) {
-    _processLink(initialLink);
+  final _appLinks = AppLinks();
+  
+  // اگر اپلیکیشن با کلیک روی لینک باز شده باشد (Cold start)
+  try {
+    final initialLink = await _appLinks.getInitialLink();
+    if (initialLink != null) {
+      _processLink(Uri.parse(initialLink.toString()));
+    }
+  } catch (e) {
+    // در صورت عدم پشتیبانی یا خطا، نادیده می‌گیریم
   }
 }
 

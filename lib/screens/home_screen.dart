@@ -25,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _checkingLock = true;
 
   final List<Map<String, dynamic>> _menuItems = [
-    {'icon': Icons.history_edit_outlined, 'title': 'استعلام اصالت', 'route': 'auth'},
+    {'icon': Icons.history, 'title': 'استعلام اصالت', 'route': 'auth'}, // اصلاح شد
     {'icon': Icons.directions_car_filled_outlined, 'title': 'مشخصات فنی', 'route': 'tech'},
     {'icon': Icons.build_outlined, 'title': 'سابقه تعمیرات', 'route': 'repair'},
     {'icon': Icons.local_shipping_outlined, 'title': 'سابقه تصادف', 'route': 'accident'},
