@@ -21,6 +21,7 @@ class _AuthScreenState extends State<AuthScreen> {
   Timer? _timer;
   int _start = 120;
   bool _isTimerActive = false;
+  int _activeOtpBox = -1; // برای اینکه بدانیم کدام باکس کد فعال است
   
   // متغیرهای اسلایدر
   final PageController _pageController = PageController();
@@ -32,7 +33,7 @@ class _AuthScreenState extends State<AuthScreen> {
     {
       'icon': Icons.verified_user,
       'title': 'استعلام اصالت',
-      'desc': 'با یک کلیک، اصالت هر خودرو را استعلام کنید...',
+      'desc': 'با یک کلیک، اصالت هر خودرو را استعلام کنید و از خرید خودروی تصادفی در امان باشید.',
     },
     {
       'icon': Icons.history,
@@ -62,7 +63,6 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  // بررسی کش (اگر وارد شده بود مستقیم بره هوم)
   void _checkLoginStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
@@ -71,13 +71,12 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  // ذخیره ورود در کش
   void _setLoggedIn() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
   }
 
-  // نمایش الرت شناور تمام عرض
+  // الرت شناور در بالاترین نقطه صفحه
   void _showAlert(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -85,13 +84,16 @@ class _AuthScreenState extends State<AuthScreen> {
         content: Text(message, style: const TextStyle(fontFamily: 'Peyda', color: Colors.white)),
         backgroundColor: isError ? AppColors.danger : Colors.green,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 20, left: 10, right: 10),
+        margin: EdgeInsets.only(
+          bottom: MediaQuery.of(context).size.height - 120, // چسبیدن به بالاترین نقطه
+          left: 10,
+          right: 10,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
 
-  // لاجیک دکمه‌های اسلایدر
   void _onNextPressed() {
     if (_currentPage < _slides.length - 1) {
       _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.ease);
@@ -157,17 +159,19 @@ class _AuthScreenState extends State<AuthScreen> {
                               return;
                             }
                             setModalState(() => _isLoadingBtn = true);
-                            await Future.delayed(const Duration(seconds: 2)); // شبیه‌سازی درخواست سرور
+                            await Future.delayed(const Duration(seconds: 2));
                             setModalState(() => _isLoadingBtn = false);
                             
-                            // رفتن به مرحله کد تاید (بستن این شیت و باز شدن شیت کد)
                             Navigator.pop(context);
                             _showOtpSheet();
                           },
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            elevation: 0, // حذف سایه
+                          ),
                           child: _isLoadingBtn 
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text('ادامه', style: TextStyle(fontFamily: 'Peyda')),
+                            : const Text('ادامه', style: TextStyle(fontFamily: 'Peyda', color: Colors.white)),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -231,14 +235,14 @@ class _AuthScreenState extends State<AuthScreen> {
                           if (_isTimerActive)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(color: AppColors.mattedGrey, borderRadius: BorderRadius.circular(8)), // انحنای 8 پیکسل
+                              decoration: BoxDecoration(color: AppColors.mattedGrey, borderRadius: BorderRadius.circular(8)),
                               child: Text("${(_start ~/ 60).toString().padLeft(2, '0')}:${(_start % 60).toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary, fontFamily: 'Peyda')),
                             )
                           else
                             GestureDetector(
                               onTap: () {
                                 setModalState(() { _start = 120; _isTimerActive = true; });
-                                _startTimer(); // ارسال مجدد
+                                _startTimer();
                               },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -262,14 +266,17 @@ class _AuthScreenState extends State<AuthScreen> {
                               _verifyOtp();
                             }
                           },
+                          onCodeSubmitted: (code) {},
                           decoration: BoxLooseDecoration(
-                            gapSpace: 12, // فاصله بین باکس‌ها
-                            strokeColorBuilder: const FixedColorBuilder(Colors.grey), // بوردر پیش‌فرض خاکستری
-                            bgColorBuilder: const FixedColorBuilder(Colors.transparent), // حذف پس‌زمینه طوسی
-                            radius: const Radius.circular(8), // انحنای باکس‌ها
-                            strokeWidth: 1, // ضخامت بوردر 1
+                            gapSpace: 12,
+                            strokeColorBuilder: FixedColorBuilder(_activeOtpBox >= 0 ? AppColors.primary : Colors.grey), // بوردر آبی برای باکس فعال
+                            bgColorBuilder: const FixedColorBuilder(Colors.transparent),
+                            radius: const Radius.circular(8),
+                            strokeWidth: 1,
                             textStyle: const TextStyle(fontSize: 20, color: AppColors.textPrimary, fontFamily: 'Peyda', fontWeight: FontWeight.w700),
                           ),
+                          currentCode: _otpController.text,
+                          focusNode: FocusNode(),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -278,7 +285,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           onTap: () {
                             Navigator.pop(context);
                             _timer?.cancel();
-                            _showPhoneSheet(); // برگشت به شیت شماره
+                            _showPhoneSheet();
                           },
                           child: const Text('ویرایش شماره موبایل', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500, fontFamily: 'Peyda')),
                         ),
@@ -289,7 +296,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         height: 50,
                         child: ElevatedButton(
                           onPressed: _verifyOtp,
-                          child: const Text('ورود', style: TextStyle(fontFamily: 'Peyda')),
+                          style: ElevatedButton.styleFrom(elevation: 0),
+                          child: const Text('ورود', style: TextStyle(fontFamily: 'Peyda', color: Colors.white)),
                         ),
                       ),
                     ],
@@ -303,18 +311,27 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
+  // تایمر بدون مشکل و فریز با استفاده از ValueNotifier
   void _startTimer() {
     _timer?.cancel();
-    setState(() { _start = 120; _isTimerActive = true; });
+    _isTimerActive = true;
+    _start = 120;
+
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_start == 0) {
-          _timer?.cancel();
-          _isTimerActive = false;
-        } else {
-          _start--;
+      if (_start == 0) {
+        timer.cancel();
+        if (mounted) {
+          setState(() {
+            _isTimerActive = false;
+          });
         }
-      });
+      } else {
+        if (mounted) {
+          setState(() {
+            _start--;
+          });
+        }
+      }
     });
   }
 
@@ -327,7 +344,6 @@ class _AuthScreenState extends State<AuthScreen> {
       _showAlert('کد تایید ناقص است', isError: true);
       return;
     }
-    // شبیه‌سازی موفقیت
     _setLoggedIn();
     _showAlert('ورود با موفقیت انجام شد', isError: false);
     await Future.delayed(const Duration(seconds: 1));
@@ -391,7 +407,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.ease);
                         },
                         style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: _currentPage == 0 ? Colors.white24 : Colors.white),
+                          side: BorderSide(color: _currentPage == 0 ? Colors.white24 : Colors.white, width: 2), // بوردر 2
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: const Text('قبل', style: TextStyle(color: Colors.white, fontFamily: 'Peyda')),
@@ -405,9 +421,13 @@ class _AuthScreenState extends State<AuthScreen> {
                       child: ElevatedButton(
                         onPressed: _onNextPressed,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _currentPage == _slides.length - 1 ? Colors.white : AppColors.primary, // آبی کم رنگ/سفید در صفحه آخر
-                          foregroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          backgroundColor: _currentPage == _slides.length - 1 ? Colors.white : AppColors.primary,
+                          foregroundColor: _currentPage == _slides.length - 1 ? AppColors.primary : Colors.white, // متن سفید در غیر اینصورت
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: const BorderSide(color: Colors.white, width: 2), // بوردر سفید 2
+                          ),
+                          elevation: 0, // حذف سایه
                         ),
                         child: Text(
                           _currentPage == _slides.length - 1 ? 'ورود / ثبت‌نام' : 'بعدی',
