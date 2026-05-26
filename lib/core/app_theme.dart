@@ -1,16 +1,15 @@
-// lib/core/app_theme.dart
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // آبی تیره متوسط (بدون گرادیانت)
-  static const Color primary = Color(0xFF1A3C5A); 
-  static const Color background = Color(0xFF0F1F2E);
-  static const Color surface = Color(0xFF1E3044);
-  static const Color accent = Color(0xFF2E86DE);
-  static const Color textPrimary = Colors.white;
-  static const Color textSecondary = Colors.white70;
-  static const Color skeletonBase = Color(0xFF2A3F52);
-  static const Color skeletonHighlight = Color(0xFF3A5568);
+  // آبی ملایم و کمرنگ‌تر (بدون گرادیانت)
+  static const Color primary = Color(0xFF4A90E2); 
+  static const Color background = Color(0xFFF5F7FA); // پس‌زمینه روشن
+  static const Color surface = Color(0xFFFFFFFF); // کارت‌ها و شیت‌های سفید
+  static const Color accent = Color(0xFF4A90E2); // دکمه‌ها و اکسنت
+  static const Color textPrimary = Color(0xFF1A2E40);
+  static const Color textSecondary = Color(0xFF7F8C8D);
+  static const Color danger = Color(0xFFE74C3C);
+  static const Color mattedGrey = Color(0xFFECF0F1); // برای پس‌زمینه تایمر
 }
 
 class AppTheme {
@@ -18,7 +17,7 @@ class AppTheme {
     return ThemeData(
       scaffoldBackgroundColor: AppColors.background,
       fontFamily: 'Peyda',
-      colorScheme: const ColorScheme.dark(
+      colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.accent,
         surface: AppColors.surface,

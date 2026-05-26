@@ -1,8 +1,8 @@
-// lib/screens/auth_screen.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:sms_autofill/sms_autofill.dart';
 import '../core/app_theme.dart';
-import 'home_screen.dart'; // اضافه کردن ایمپورت صفحه هوم
+import 'home_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
@@ -11,161 +11,280 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateMixin {
+class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
-  bool _isOtpStage = false;
-  late AnimationController _animController;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-    _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
-    _animController.forward();
-  }
+  
+  Timer? _timer;
+  int _start = 120; // 2 دقیقه
+  bool _isTimerActive = false;
 
   @override
   void dispose() {
-    _animController.dispose();
+    _timer?.cancel();
     _phoneController.dispose();
     _otpController.dispose();
     SmsAutoFill().unregisterListener();
     super.dispose();
   }
 
-  // ارسال شماره برای دریافت کد
-  void _sendOtp() {
-    if (_phoneController.text.length == 11) {
-      // TODO: درخواست به بکند PHP برای ارسال پیامک
-      setState(() {
-        _isOtpStage = true;
-      });
-      _startListeningOtp(); // شروع به گوش دادن برای پر کردن خودکار کد
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('شماره موبایل نامعتبر است')),
-      );
-    }
+  void _showPhoneSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _buildPhoneUI(),
+    );
   }
 
-  // گوش دادن به پیامک‌های ورودی برای Auto-fill
+  void _showOtpSheet() {
+    Navigator.pop(context); // بستن شیت شماره
+    _startTimer();
+    _startListeningOtp();
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _buildOtpUI(),
+    );
+  }
+
+  void _startTimer() {
+    setState(() {
+      _start = 120;
+      _isTimerActive = true;
+    });
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_start == 0) {
+          _timer?.cancel();
+          _isTimerActive = false;
+        } else {
+          _start--;
+        }
+      });
+    });
+  }
+
   void _startListeningOtp() async {
     await SmsAutoFill().listenForCode;
   }
 
-  // تایید کد ورود
-  void _verifyOtp() {
-    if (_otpController.text.length == 4 || _otpController.text.length == 5) {
-      // TODO: درخواست به بکند PHP برای تایید کد
-      
-      // بعد از تایید موفق ناوبری به صفحه هوم
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()), // حذف کلمه const
-      );
+  void _sendCodeToServer() {
+    if (_phoneController.text.length != 11) {
+      _showAlert('شماره موبایل نامعتبر است', isError: true);
+      return;
     }
+    // شبیه‌سازی لودینگ دکمه
+    // در واقعیت اینجا به PHP درخواست زده میشود
+    _showOtpSheet();
+  }
+
+  void _verifyOtp() {
+    if (_otpController.text.length < 4) {
+      _showAlert('کد تایید ناقص است', isError: true);
+      return;
+    }
+    // موفقیت فرضی
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+  }
+
+  void _showAlert(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(fontFamily: 'Peyda')),
+        backgroundColor: isError ? AppColors.danger : AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
+    // بلافاصله بعد از باز شدن صفحه، شیت شماره را نمایش بده
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showPhoneSheet());
+    
+    return const Scaffold(
+      backgroundColor: AppColors.background,
+      body: SizedBox.shrink(), // فقط پس‌زمینه
+    );
+  }
+
+  // --------------------------------- UI شماره موبایل ---------------------------------
+  Widget _buildPhoneUI() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // لوگوی اپلیکیشن (اینجا یک آیکون گذاشتم، می‌تونی عکس بذاری)
-                const Icon(Icons.directions_car, size: 80, color: AppColors.accent),
-                const SizedBox(height: 16),
-                const Text(
-                  'اصالت خودرو',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text('ورود / ثبت‌نام', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              const Text('لطفا شماره موبایل خود را وارد کنید', style: TextStyle(color: AppColors.textSecondary)),
+              const SizedBox(height: 24),
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                cursorColor: AppColors.primary,
+                decoration: InputDecoration(
+                  labelText: 'شماره موبایل',
+                  hintText: '0912',
+                  labelStyle: const TextStyle(color: AppColors.textSecondary),
+                  floatingLabelStyle: const TextStyle(color: AppColors.primary),
+                  filled: true,
+                  fillColor: AppColors.mattedGrey,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.transparent),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'برای ادامه شماره موبایل خود را وارد کنید',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w400,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _sendCodeToServer,
+                child: const Text('ادامه'),
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: RichText(
+                  text: const TextSpan(
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    children: [
+                      TextSpan(text: 'ورود شما به معنای پذیرش '),
+                      TextSpan(text: 'شرایط اصالت خودرو', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                      TextSpan(text: ' و '),
+                      TextSpan(text: 'حریم خصوصی', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                      TextSpan(text: ' است.'),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 40),
-                
-                if (!_isOtpStage) ...[
-                  // فیلد شماره موبایل
-                  TextField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontFamily: 'Peyda',
-                      fontSize: 18,
-                      color: AppColors.textPrimary,
-                      letterSpacing: 2,
-                    ),
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: AppColors.surface,
-                      hintText: '۰۹۱۲۳۴۵۶۷۸۹',
-                      hintStyle: const TextStyle(color: Colors.white38),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --------------------------------- UI کد تایید ---------------------------------
+  Widget _buildOtpUI() {
+    String formattedTime = "${(_start ~/ 60).toString().padLeft(2, '0')}:${(_start % 60).toString().padLeft(2, '0')}";
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('کد تایید', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                  if (_isTimerActive)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.mattedGrey,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(formattedTime, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                    )
+                  else
+                    GestureDetector(
+                      onTap: () {
+                        // ارسال مجدد کد
+                        _sendCodeToServer();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.mattedGrey,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text('ارسال مجدد', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _sendOtp,
-                    child: const Text('دریافت کد تایید'),
-                  ),
-                ] else ...[
-                  // فیلد کد تایید (OTP) با قابلیت Auto-fill - اصلاح شده برای نسخه جدید پکیج
-                  PinFieldAutoFill(
-                    controller: _otpController,
-                    codeLength: 5, // بستگی به طول کد شما در بکند PHP دارد
-                    keyboardType: TextInputType.number,
-                    onCodeChanged: (code) {
-                      if (code != null && code.length == 5) {
-                        _verifyOtp(); // اگر کد کامل شد خودکار وارد شود
-                      }
-                    },
-                    decoration: BoxLooseDecoration(
-                      strokeColorBuilder: FixedColorBuilder(AppColors.accent), // رنگ حاشیه باکس‌ها
-                      bgColorBuilder: FixedColorBuilder(AppColors.surface), // جایگزین bgColor حذف شده
-                      radius: const Radius.circular(8),
-                      strokeWidth: 2,
-                      textStyle: const TextStyle(
-                        fontSize: 24,
-                        color: AppColors.textPrimary,
-                        fontFamily: 'Peyda',
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _verifyOtp,
-                    child: const Text('ورود به برنامه'),
-                  ),
                 ],
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+              Text('لطفا کد ارسال شده به شماره ${_phoneController.text} را وارد کنید', style: const TextStyle(color: AppColors.textSecondary)),
+              const SizedBox(height: 24),
+              PinFieldAutoFill(
+                controller: _otpController,
+                codeLength: 4,
+                keyboardType: TextInputType.number,
+                onCodeChanged: (code) {
+                  if (code != null && code.length == 4) {
+                    _verifyOtp();
+                  }
+                },
+                decoration: BoxLooseDecoration(
+                  gapSpace: 4, // 4 پیکسل فاصله بین باکس‌ها
+                  strokeColorBuilder: const FixedColorBuilder(AppColors.primary),
+                  bgColorBuilder: const FixedColorBuilder(AppColors.mattedGrey),
+                  radius: const Radius.circular(8),
+                  strokeWidth: 2,
+                  textStyle: const TextStyle(
+                    fontSize: 24,
+                    color: AppColors.textPrimary,
+                    fontFamily: 'Peyda',
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context); // برگشت به شیت شماره
+                    _timer?.cancel();
+                  },
+                  child: const Text('ویرایش شماره موبایل', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _verifyOtp,
+                child: const Text('ورود'),
+              ),
+              const SizedBox(height: 16),
+            ],
           ),
         ),
       ),
