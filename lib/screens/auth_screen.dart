@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:sms_autofill/sms_autofill.dart';
 import '../core/app_theme.dart';
+import 'home_screen.dart'; // اضافه کردن ایمپورت صفحه هوم
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
@@ -61,10 +62,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   void _verifyOtp() {
     if (_otpController.text.length == 4 || _otpController.text.length == 5) {
       // TODO: درخواست به بکند PHP برای تایید کد
+      
       // بعد از تایید موفق ناوبری به صفحه هوم
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => HomeScreen()), // حذف کلمه const
       );
     }
   }
@@ -133,7 +135,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                     child: const Text('دریافت کد تایید'),
                   ),
                 ] else ...[
-                  // فیلد کد تایید (OTP) با قابلیت Auto-fill
+                  // فیلد کد تایید (OTP) با قابلیت Auto-fill - اصلاح شده برای نسخه جدید پکیج
                   PinFieldAutoFill(
                     controller: _otpController,
                     codeLength: 5, // بستگی به طول کد شما در بکند PHP دارد
@@ -144,8 +146,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                       }
                     },
                     decoration: BoxLooseDecoration(
-                      bgColor: AppColors.surface,
-                      radius: Radius.circular(8),
+                      strokeColorBuilder: FixedColorBuilder(AppColors.accent), // رنگ حاشیه باکس‌ها
+                      bgColorBuilder: FixedColorBuilder(AppColors.surface), // جایگزین bgColor حذف شده
+                      radius: const Radius.circular(8),
                       strokeWidth: 2,
                       textStyle: const TextStyle(
                         fontSize: 24,

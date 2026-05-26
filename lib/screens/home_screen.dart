@@ -34,7 +34,10 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         title: const Text(
           'اصالت خودرو',
-          style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+          style: TextStyle(
+            fontWeight: FontWeight.w700, 
+            color: AppColors.textPrimary,
+          ),
         ),
         actions: [
           IconButton(
@@ -83,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               width: 60,
               height: 60,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
               ),
@@ -106,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ویجت باکس خودرو بعد از لود شدن
   Widget _buildCarCard(int index) {
     // انیمیشن ظاهر شدن ملایم
-    return TweenAnimationBuilder(
+    return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
       duration: Duration(milliseconds: 400 + (index * 50)), // تاخیر جابجایی برای هر آیتم
       builder: (context, double value, child) {
