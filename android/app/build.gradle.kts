@@ -1,15 +1,13 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // برای پشتیبانی از jvmToolchain اضافه شد
-    id("org.jetbrains.kotlin.android") version "1.9.22" apply false
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
     namespace = "com.example.esalat_car"
-    compileSdk = 36
+    compileSdk = 36 // تنظیم دستی روی SDK 34 (اندروید 14)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -17,15 +15,15 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    // استفاده از jvmToolchain برای هماهنگ کردن اجباری نسخه جاوا در تمام پکیج‌ها
-    kotlin {
-        jvmToolchain(17)
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
         applicationId = "com.example.esalat_car"
-        minSdk = 24
-        targetSdk = 36
+        // تنظیم دستی نسخه‌ها برای جلوگیری از ارور Parsing Package در گوشی
+        minSdk = 24 // حداقل نسخه اندروید 7.0 (مناسب برای پکیج image_picker)
+        targetSdk = 36 // هدف اندروید 14
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
