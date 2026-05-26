@@ -158,7 +158,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             if (_phoneController.text.length != 11) { _showAlert('شماره موبایل نامعتبر است', isError: true); return; }
                             setModalState(() => _isLoadingBtn = true);
                             try {
-                              var response = await http.post(Uri.parse("https://websera.ir/auth.php?action=send_code"), headers: {'Content-Type': 'application/json'}, body: jsonEncode({"phone": _phoneController.text}));
+                              var response = await http.post(Uri.parse("http://websera.ir/auth.php?action=send_code"), headers: {'Content-Type': 'application/json'}, body: jsonEncode({"phone": _phoneController.text}));
                               var data = jsonDecode(response.body);
                               if (data['status'] == 'success') { _showAlert('کد تایید ارسال شد', isError: false); Navigator.pop(context); _showOtpSheet(); } 
                               else { _showAlert(data['message'] ?? 'خطا در ارسال کد', isError: true); }
@@ -301,7 +301,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   void _resendCode() async {
     try {
-      var response = await http.post(Uri.parse("https://websera.ir/auth.php?action=send_code"), headers: {'Content-Type': 'application/json'}, body: jsonEncode({"phone": _phoneController.text}));
+      var response = await http.post(Uri.parse("http://websera.ir/auth.php?action=send_code"), headers: {'Content-Type': 'application/json'}, body: jsonEncode({"phone": _phoneController.text}));
       var data = jsonDecode(response.body);
       if (data['status'] == 'success') { _startTimer(); _showAlert('کد مجدداً ارسال شد', isError: false); } 
       else { _showAlert(data['message'] ?? 'خطا در ارسال کد', isError: true); }
@@ -312,7 +312,7 @@ class _AuthScreenState extends State<AuthScreen> {
     String code = _getOtpCode();
     if (code.length < 4) { _showAlert('کد تایید ناقص است', isError: true); return; }
     try {
-      var response = await http.post(Uri.parse("https://websera.ir/auth.php?action=verify_code"), headers: {'Content-Type': 'application/json'}, body: jsonEncode({"phone": _phoneController.text, "code": code}));
+      var response = await http.post(Uri.parse("http://websera.ir/auth.php?action=verify_code"), headers: {'Content-Type': 'application/json'}, body: jsonEncode({"phone": _phoneController.text, "code": code}));
       var data = jsonDecode(response.body);
       if (data['status'] == 'success') {
         _setLoggedIn(_phoneController.text); _showAlert('ورود با موفقیت انجام شد', isError: false);
