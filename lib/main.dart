@@ -1,7 +1,7 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'core/app_theme.dart';
-import 'screens/auth_screen.dart';
+import 'screens/splash_screen.dart'; // تغییر مسیر به اسپلش
 
 void main() {
   runApp(const MyApp());
@@ -15,8 +15,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'اصالت خودرو',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme, // اعتم تم یکدست و فونت پیودا
-      home: const AuthScreen(), // شروع از صفحه لاگین
+      theme: AppTheme.lightTheme,
+      home: const SplashScreen(), // شروع از صفحه اسپلش و لودینگ اولیه
     );
   }
 }
