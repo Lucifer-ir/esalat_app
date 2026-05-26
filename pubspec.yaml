@@ -19,7 +19,7 @@ dependencies:
   provider: ^6.1.2              # برای مدیریت تم تاریک/روشن
   image_picker: ^1.0.7          # برای دسترسی به دوربین و گالری (ثبت تصویر)
   webview_flutter: ^4.8.0
-  sms_autofill: ^2.3.0
+  otp_autofill: ^3.0.1
   shimmer: ^3.0.0
   app_settings: ^5.1.1
   connectivity_plus: ^6.0.3

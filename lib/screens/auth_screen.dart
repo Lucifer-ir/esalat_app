@@ -1,7 +1,7 @@
 // lib/screens/auth_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:sms_autofill/sms_autofill.dart';
+import 'package:otp_autofill/otp_autofill.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -18,12 +18,13 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _otpController = TextEditingController();
+  late OTPTextEditController _otpController;
+  final OTPInteractor _otpInteractor = OTPInteractor();
   
   Timer? _timer;
   int _start = 120;
   bool _isTimerActive = false;
-  bool _isOtpFocused = false; // برای بوردر آبی باکس کد
+  bool _isOtpFocused = false;
   
   final PageController _pageController = PageController();
   int _currentPage = 0;
@@ -35,7 +36,6 @@ class _AuthScreenState extends State<AuthScreen> {
     {'icon': Icons.security, 'title': 'خرید امن', 'desc': 'پیش از انجام معامله، از سلامت و اصالت خودرو با اطمینان کامل مطلع شوید.'},
   ];
 
-  // ValueNotifier برای تایمر بدون فریز
   final ValueNotifier<int> _timerNotifier = ValueNotifier<int>(120);
   final ValueNotifier<bool> _timerActiveNotifier = ValueNotifier<bool>(true);
 
@@ -43,6 +43,27 @@ class _AuthScreenState extends State<AuthScreen> {
   void initState() {
     super.initState();
     _checkLoginStatus();
+    _initOtpController();
+  }
+
+  void _initOtpController() {
+    _otpController = OTPTextEditController(
+      codeLength: 4,
+      onCodeReceive: (code) {
+        // پر شدن خودکار کد از پیامک
+        if (code.length == 4) {
+          _verifyOtp();
+        }
+      },
+    )..startListenUserConsent(
+        (code) {
+          final exp = RegExp(r'(\d{4})');
+          return exp.firstMatch(code)?.group(0) ?? '';
+        },
+        strategies: [
+          SelectorStrategy.consentFirst,
+        ],
+      );
   }
 
   @override
@@ -53,7 +74,6 @@ class _AuthScreenState extends State<AuthScreen> {
     _pageController.dispose();
     _timerNotifier.dispose();
     _timerActiveNotifier.dispose();
-    SmsAutoFill().unregisterListener();
     super.dispose();
   }
 
@@ -69,13 +89,11 @@ class _AuthScreenState extends State<AuthScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
     await prefs.setString('userPhone', phone);
-    // تنظیم اشتراک ۷ روزه رایگان
     DateTime expireDate = DateTime.now().add(const Duration(days: 7));
     await prefs.setString('subExpire', expireDate.toIso8601String());
     await prefs.setBool('isSubActive', true);
   }
 
-  // الرت شناور در بالاترین نقطه (حتی بالای کیبورد)
   void _showAlert(String message, {bool isError = false}) {
     OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
@@ -179,7 +197,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               );
                               var data = jsonDecode(response.body);
                               if (data['status'] == 'success') {
-                                _showAlert('کد تایید ارسال شد', isError: false); // نمایش الرت سبز
+                                _showAlert('کد تایید ارسال شد', isError: false);
                                 Navigator.pop(context);
                                 _showOtpSheet();
                               } else {
@@ -224,7 +242,13 @@ class _AuthScreenState extends State<AuthScreen> {
   // --------------------------------- شیت کد تایید ---------------------------------
   void _showOtpSheet() {
     _startTimer();
-    _startListeningOtp();
+    _otpController.startListenUserConsent(
+      (code) {
+        final exp = RegExp(r'(\d{4})');
+        return exp.firstMatch(code)?.group(0) ?? '';
+      },
+      strategies: [SelectorStrategy.consentFirst],
+    );
 
     showModalBottomSheet(
       context: context,
@@ -286,34 +310,48 @@ class _AuthScreenState extends State<AuthScreen> {
                       const SizedBox(height: 8),
                       Text('لطفا کد ارسال شده به شماره ${_phoneController.text} را وارد کنید', style: const TextStyle(color: AppColors.textSecondary, fontFamily: 'Peyda')),
                       const SizedBox(height: 24),
+                      
+                      // فیلد کد تایید استایل‌دهی شده شبیه 4 باکس مجزا
                       GestureDetector(
                         onTapDown: (_) => setModalState(() => _isOtpFocused = true),
                         child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: _isOtpFocused ? Border.all(color: AppColors.primary, width: 2) : Border.all(color: Colors.transparent, width: 2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: _isOtpFocused ? Border.all(color: AppColors.primary, width: 2) : Border.all(color: AppColors.mattedGrey, width: 2),
+                            color: AppColors.mattedGrey.withOpacity(0.3),
                           ),
                           child: Directionality(
                             textDirection: TextDirection.ltr,
-                            child: PinFieldAutoFill(
+                            child: TextField(
                               controller: _otpController,
-                              codeLength: 4,
                               keyboardType: TextInputType.number,
-                              onCodeChanged: (code) {
-                                if (code != null && code.length == 4) _verifyOtp();
-                              },
-                              decoration: BoxLooseDecoration(
-                                gapSpace: 12,
-                                strokeColorBuilder: const FixedColorBuilder(Colors.grey),
-                                bgColorBuilder: const FixedColorBuilder(Colors.transparent),
-                                radius: const Radius.circular(8),
-                                strokeWidth: 1,
-                                textStyle: const TextStyle(fontSize: 20, color: AppColors.textPrimary, fontFamily: 'Peyda', fontWeight: FontWeight.w700),
+                              textAlign: TextAlign.center,
+                              maxLength: 4,
+                              style: const TextStyle(
+                                fontSize: 24, 
+                                color: AppColors.textPrimary, 
+                                fontFamily: 'Peyda', 
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 32, // فاصله بین اعداد برای ایجاد حس 4 باکس مجزا
                               ),
+                              cursorColor: AppColors.primary,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                counterText: "", // حذف شمارنده کاراکتر
+                                hintText: '⁣ − − − −',
+                                hintStyle: TextStyle(color: Colors.grey, letterSpacing: 16, fontSize: 20),
+                              ),
+                              onChanged: (code) {
+                                if (code.length == 4) {
+                                  _verifyOtp();
+                                }
+                              },
                             ),
                           ),
                         ),
                       ),
+                      
                       const SizedBox(height: 16),
                       Center(
                         child: GestureDetector(
@@ -345,7 +383,6 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  // تایمر با ValueNotifier (بدون فریز مطلق)
   void _startTimer() {
     _timer?.cancel();
     _timerNotifier.value = 120;
@@ -359,10 +396,6 @@ class _AuthScreenState extends State<AuthScreen> {
         _timerNotifier.value--;
       }
     });
-  }
-
-  void _startListeningOtp() async {
-    await SmsAutoFill().listenForCode;
   }
 
   void _resendCode() async {
