@@ -10,6 +10,7 @@ import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'password_screen.dart';
 import 'subscription_screen.dart';
+import 'fine_inquiry_screen.dart'; // صفحه استعلام خلافی
 
 class HomeScreen extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeNotifier;
@@ -31,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Map<String, dynamic>> _menuItems = [
     {'icon': Icons.history, 'title': 'استعلام اصالت'},
+    {'icon': Icons.gavel_outlined, 'title': 'استعلام خلافی'}, // اضافه شد
     {'icon': Icons.directions_car_filled_outlined, 'title': 'مشخصات فنی'},
     {'icon': Icons.build_outlined, 'title': 'سابقه تعمیرات'},
     {'icon': Icons.local_shipping_outlined, 'title': 'سابقه تصادف'},
@@ -233,14 +235,24 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // آیتم‌های گرید
+  // آیتم‌های گرید با لاجیک ناوبری
   Widget _buildGridItem(Map<String, dynamic> item, bool isDark) {
     return GestureDetector(
       onTap: () {
         if (!_hasSubscription) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('برای دسترسی نیاز به خرید اشتراک دارید'), backgroundColor: AppColors.danger));
+          return;
+        }
+
+        // ناوبری به صفحات مربوطه
+        String title = item['title'] as String;
+        if (title == 'استعلام خلافی') {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const FineInquiryScreen()));
+        } else if (title == 'استعلام اصالت') {
+          // Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthInquiryScreen()));
+          ScaffoldMessenger.of(context).showSnackBar( SnackBar(content: Text('صفحه $title در حال توسعه است'), backgroundColor: AppColors.primary));
         } else {
-          // ناوبری به صفحه مربوطه
+          ScaffoldMessenger.of(context).showSnackBar( SnackBar(content: Text('صفحه $title در حال توسعه است'), backgroundColor: AppColors.primary));
         }
       },
       child: Column(
@@ -267,10 +279,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // دو دکمه پایین صفحه با فاصله 20 پیکسلی از کنترل‌های اندروید
+  // دو دکمه پایین صفحه با فاصله از کنترل‌های اندروید
   Widget _buildBottomActions(bool isDark) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32), // 32 پیکسل فاصله از پایین برای کنترل اندروید
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32), // 32 پیکسل فاصله از پایین
       decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E1E) : Colors.white, boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))]),
       child: Row(
         children: [
@@ -278,7 +290,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: SizedBox(
               height: 48,
               child: ElevatedButton.icon(
-                onPressed: () { /* ثبت خودرو */ },
+                onPressed: () { 
+                  // TODO: ناوبری به صفحه ثبت خودروی جدید
+                },
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                 icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 20),
                 label: const Text('ثبت خودروی جدید', style: TextStyle(fontFamily: 'Peyda', color: Colors.white)),
@@ -290,7 +304,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: SizedBox(
               height: 48,
               child: ElevatedButton.icon(
-                onPressed: () { /* ثبت تصویر */ },
+                onPressed: () { 
+                  // TODO: ناوبری به صفحه ثبت تصویر
+                },
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                 icon: const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 20),
                 label: const Text('ثبت تصویر', style: TextStyle(fontFamily: 'Peyda', color: Colors.white)),
