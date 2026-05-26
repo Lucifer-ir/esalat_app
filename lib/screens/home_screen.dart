@@ -30,18 +30,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.background, // پس‌زمینه روشن
         elevation: 0,
         title: const Text(
           'اصالت خودرو',
           style: TextStyle(
             fontWeight: FontWeight.w700, 
-            color: AppColors.textPrimary,
+            color: AppColors.textPrimary, // متن تیره
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person, color: AppColors.accent),
+            icon: const Icon(Icons.person, color: AppColors.primary), // آبی ملایم
             onPressed: () {
               // ناوبری به حساب کاربری
             },
@@ -70,11 +70,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ویجت اسکلت‌لودینگ (Skeleton)
+  // ویجت اسکلت‌لودینگ (Skeleton) - تنظیم شده برای تم روشن
   Widget _buildSkeletonCard() {
     return Shimmer.fromColors(
-      baseColor: AppColors.skeletonBase,
-      highlightColor: AppColors.skeletonHighlight,
+      baseColor: AppColors.mattedGrey, // رنگ پایه خاکستری مات
+      highlightColor: AppColors.surface, // رنگ برجسته سفید
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surface,
@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.grey[300],
                 shape: BoxShape.circle,
               ),
             ),
@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 80,
               height: 14,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.grey[300],
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -123,8 +123,15 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surface, // کارت‌های سفید
           borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05), // سایه ملایم برای کارت‌ها
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
         ),
         child: Material(
           color: Colors.transparent,
@@ -138,13 +145,12 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // در اینجا آیکون/تصویر خودرو قرار می‌گیرد
-                // فعلا یک آیکون پیش‌فرض گذاشتم
-                const Icon(Icons.directions_car, size: 50, color: AppColors.accent),
+                const Icon(Icons.directions_car, size: 50, color: AppColors.primary),
                 const SizedBox(height: 12),
                 Text(
                   'خودرو ${index + 1}', // نام مدل خودرو
                   style: const TextStyle(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textPrimary, // متن تیره
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -170,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('برای دسترسی به اطلاعات نیاز به خرید اشتراک دارید'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: AppColors.danger, // استفاده از رنگ قرمز خطر
         ),
       );
       // یا ناوبری به صفحه خرید اشتراک
